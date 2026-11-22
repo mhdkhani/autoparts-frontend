@@ -3,9 +3,11 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev -H 0.0.0.0",
+    "dev": "next dev -H \"$BIND_HOST\"",
+    "prebuild": "npm run check:boundaries",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "check:boundaries": "node scripts/check-boundaries.mjs"
   },
   "dependencies": {
     "next": "^15.5.0",

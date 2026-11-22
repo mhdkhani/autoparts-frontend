@@ -1,0 +1,5 @@
+/* Global styles of the FRONT module only — loaded by app/(front)/layout.tsx. */
+body {
+  margin: 2rem;
+  font-family: system-ui, sans-serif;
+}

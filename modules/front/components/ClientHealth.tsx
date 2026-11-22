@@ -3,18 +3,17 @@
 import { useEffect, useState } from 'react';
 
 // Browser-side: relative /api, routed to the backend by nginx.
-// NEXT_PUBLIC_API_URL comes from infra/.env (inlined into the bundle at build time).
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
-
-export default function ClientHealth() {
+// apiUrl is PUBLIC_API_URL from infra/.env, read on the server at request time
+// and passed in as a prop — nothing is baked into the build.
+export default function ClientHealth({ apiUrl }: { apiUrl: string }) {
   const [data, setData] = useState<unknown>('loading…');
 
   useEffect(() => {
-    fetch(`${API_URL}/health`)
+    fetch(`${apiUrl}/health`)
       .then((r) => r.json())
       .then(setData)
       .catch((e) => setData({ status: 'unreachable', error: String(e) }));
-  }, []);
+  }, [apiUrl]);
 
   return (
     <>
