@@ -1,3 +1,5 @@
+import { backendFetch } from '@shared/backend';
+import { adminToken } from '@admin/lib/auth';
 import styles from './SystemStatus.module.css';
 
 type Check = { ok: boolean; detail?: unknown; error?: string; ms?: number };
@@ -18,12 +20,11 @@ const SERVICES: Record<string, string> = {
 };
 
 async function getHealth(): Promise<Health | null> {
-  // Server-side call to the backend over the Docker network (API_INTERNAL_URL from infra/.env).
-  const base = process.env.API_INTERNAL_URL;
-  if (!base) throw new Error('Missing env var API_INTERNAL_URL (set it in infra/.env)');
+  // Server-side call over the Docker network to the admin-only detailed health check
+  // (the public /api/health only says ok / degraded).
   try {
-    const res = await fetch(`${base}/api/health`, { cache: 'no-store' });
-    return (await res.json()) as Health;
+    const res = await backendFetch('/admin/system/health', { token: await adminToken() });
+    return res.ok ? ((await res.json()) as Health) : null;
   } catch {
     return null;
   }

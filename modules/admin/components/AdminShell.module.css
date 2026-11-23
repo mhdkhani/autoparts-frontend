@@ -36,6 +36,67 @@
   color: #fff;
 }
 
+/* collapsible group (e.g. «سایت») */
+.groupToggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font: inherit;
+  text-align: start;
+  border: 0;
+  background: none;
+  cursor: pointer;
+}
+
+.groupActive {
+  color: #fff;
+}
+
+.chevron {
+  font-size: 1.2rem;
+  line-height: 1;
+  transition: transform 0.15s;
+}
+
+.chevronOpen {
+  transform: rotate(-90deg);
+}
+
+.groupBody {
+  background: #0b1220;
+  padding: 0.25rem 0 0.5rem;
+}
+
+.sectionTitle {
+  padding: 0.6rem 1.5rem 0.35rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #9ca3af;
+}
+
+.subLink {
+  display: block;
+  padding: 0.5rem 2rem 0.5rem 1.25rem;
+  font-size: 0.92rem;
+  color: #cbd5e1;
+}
+
+.subLink:hover {
+  background: #1f2937;
+  color: #fff;
+}
+
+.role {
+  margin-inline-start: 0.4rem;
+  padding: 0.1rem 0.45rem;
+  border-radius: 999px;
+  background: #eef2ff;
+  color: #4338ca;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
 .main {
   flex: 1;
   min-width: 0;
@@ -63,8 +124,23 @@
   color: #2563eb;
 }
 
+.user {
+  color: #374151;
+  font-weight: 600;
+}
+
 .logout {
+  font: inherit;
+  padding: 0;
+  border: 0;
+  background: none;
   color: #dc2626;
+  cursor: pointer;
+}
+
+.logout:disabled {
+  opacity: 0.6;
+  cursor: default;
 }
 
 .content {

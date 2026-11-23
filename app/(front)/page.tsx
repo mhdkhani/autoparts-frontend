@@ -1,16 +1,13 @@
 import ClientHealth from '@front/components/ClientHealth';
+import { backendFetch } from '@shared/backend';
 
 // Rendered per request: the backend isn't reachable during `next build`.
 export const dynamic = 'force-dynamic';
 
 async function getHealth() {
-  // Server-side: talk to the backend container directly over the Docker network.
-  // API_INTERNAL_URL comes from infra/.env.
-  const base = process.env.API_INTERNAL_URL;
-  if (!base) throw new Error('Missing env var API_INTERNAL_URL (set it in infra/.env)');
+  // Server-side: straight to the backend container over the Docker network (no cookies, no extra headers).
   try {
-    const res = await fetch(`${base}/api/health`, { cache: 'no-store' });
-    return await res.json();
+    return await (await backendFetch('/health')).json();
   } catch (e) {
     return { status: 'unreachable', error: String(e) };
   }

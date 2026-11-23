@@ -1,0 +1,175 @@
+/* «تنظیمات سایت»: side list of sections + one section's groups. */
+
+.layout {
+  display: flex;
+  gap: 1.5rem;
+  align-items: flex-start;
+}
+
+.side {
+  width: 220px;
+  flex-shrink: 0;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 0.5rem 0;
+  position: sticky;
+  top: 1rem;
+}
+
+.category {
+  padding: 0.75rem 1rem 0.3rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #6b7280;
+}
+
+.sectionLink {
+  display: block;
+  padding: 0.5rem 1rem;
+  font-size: 0.92rem;
+  border-inline-start: 3px solid transparent;
+}
+
+.sectionLink:hover {
+  background: #f9fafb;
+}
+
+.sectionActive,
+.sectionActive:hover {
+  border-inline-start-color: #2563eb;
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-weight: 600;
+}
+
+.body {
+  flex: 1;
+  min-width: 0;
+}
+
+.group {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+}
+
+.groupHead {
+  padding: 0.9rem 1.25rem;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.groupTitle {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.groupDesc {
+  margin: 0.3rem 0 0;
+  font-size: 0.85rem;
+  color: #6b7280;
+}
+
+.fields {
+  padding: 0.5rem 1.25rem;
+}
+
+/* label column + control column, like a settings sheet */
+.row {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 480px);
+  gap: 0.5rem 1.5rem;
+  padding: 0.85rem 0;
+  border-bottom: 1px dashed #f1f5f9;
+}
+
+.row:last-child {
+  border-bottom: 0;
+}
+
+.rowLabel {
+  padding-top: 0.5rem;
+  font-size: 0.92rem;
+  color: #374151;
+}
+
+.path {
+  display: block;
+  margin-top: 0.2rem;
+  font-size: 0.72rem;
+  color: #9ca3af;
+  direction: ltr;
+  text-align: end;
+}
+
+.textarea {
+  min-height: 90px;
+  resize: vertical;
+}
+
+.logoBox {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.logoPreview {
+  width: 160px;
+  height: 80px;
+  border: 1px dashed #d1d5db;
+  border-radius: 6px;
+  background: #f9fafb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  font-size: 0.8rem;
+  color: #9ca3af;
+}
+
+.logoPreview img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.saveBar {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1.25rem;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.04);
+}
+
+.saved {
+  color: #166534;
+  font-size: 0.9rem;
+}
+
+.dirty {
+  color: #b45309;
+  font-size: 0.9rem;
+}
+
+@media (max-width: 900px) {
+  .layout {
+    flex-direction: column;
+  }
+  .side {
+    width: 100%;
+    position: static;
+  }
+  .row {
+    grid-template-columns: 1fr;
+  }
+  .rowLabel {
+    padding-top: 0;
+  }
+}
