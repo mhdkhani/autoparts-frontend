@@ -1,8 +1,5 @@
 // Shapes returned by the backend admin API (backend: src/modules/users/admin).
 
-/** Permission keys — backend admin-permissions.ts */
-export type Permission = 'system.users' | 'system.roles' | 'system.config';
-
 export type AdminUser = {
   id: number;
   username: string;
@@ -20,11 +17,12 @@ export type AdminRole = {
   id: number;
   name: string;
   allPermissions: boolean;
-  permissions: Permission[];
+  /** permission keys as stored by the backend (the panel's own list is `Permission` in lib/nav.ts) */
+  permissions: string[];
   userCount?: number;
 };
 
-export type PermissionInfo = { key: Permission; group: string; label: string };
+export type PermissionInfo = { key: string; group: string; label: string };
 
 // ---------- site settings (backend: src/modules/site-config/config.definition.ts) ----------
 

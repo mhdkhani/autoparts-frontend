@@ -1,11 +1,23 @@
 'use client';
 
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
 import { adminSend } from '@admin/lib/client-api';
-import type { AdminRole, Permission, PermissionInfo } from '@admin/lib/types';
-import ui from '../ui.module.css';
+import type { AdminRole, PermissionInfo } from '@admin/lib/types';
+import {
+  Button,
+  Checkbox,
+  Field,
+  Fieldset,
+  Form,
+  FormActions,
+  FormError,
+  Hint,
+  Input,
+  Spacer,
+  useConfirm,
+  useToast,
+} from '../ui';
 
 type Props = {
   permissions: PermissionInfo[];
@@ -16,12 +28,15 @@ type Props = {
 /** «افزودن نقش» / «ویرایش نقش»: name + which parts of the panel it may use. */
 export default function AdminRoleForm({ permissions, role }: Props) {
   const router = useRouter();
+  const toast = useToast();
+  const confirm = useConfirm();
   const editing = Boolean(role);
   const [name, setName] = useState(role?.name ?? '');
   const [all, setAll] = useState(role?.allPermissions ?? false);
-  const [selected, setSelected] = useState<Permission[]>(role?.permissions ?? []);
+  // keys come from GET /permissions (the backend's list), so they're plain strings here
+  const [selected, setSelected] = useState<string[]>(role?.permissions ?? []);
   const [error, setError] = useState('');
-  const [busy, setBusy] = useState(false);
+  const [busy, setBusy] = useState<'' | 'save' | 'delete'>('');
 
   // permissions grouped by their menu path («سایت › دسترسی‌ها»)
   const groups = [...new Set(permissions.map((p) => p.group))].map((g) => ({
@@ -29,7 +44,7 @@ export default function AdminRoleForm({ permissions, role }: Props) {
     items: permissions.filter((p) => p.group === g),
   }));
 
-  function toggle(key: Permission, on: boolean) {
+  function toggle(key: string, on: boolean) {
     setSelected((s) => (on ? [...s, key] : s.filter((k) => k !== key)));
   }
 
@@ -40,92 +55,85 @@ export default function AdminRoleForm({ permissions, role }: Props) {
       return;
     }
     setError('');
-    setBusy(true);
+    setBusy('save');
     const body = { name, allPermissions: all, permissions: all ? [] : selected };
     const res = editing
       ? await adminSend('PUT', `/roles/${role!.id}`, body)
       : await adminSend('POST', '/roles', body);
     if (!res.ok) {
       setError(res.error);
-      setBusy(false);
+      setBusy('');
       return;
     }
+    toast.success(editing ? 'تغییرات نقش ذخیره شد.' : 'نقش جدید ساخته شد.');
     router.push('/admin/system/roles');
     router.refresh();
   }
 
   async function onDelete() {
-    if (!role || !window.confirm(`نقش «${role.name}» حذف شود؟`)) return;
+    if (!role) return;
+    const ok = await confirm({
+      title: 'حذف نقش',
+      message: `نقش «${role.name}» حذف شود؟ این کار برگشت‌پذیر نیست.`,
+      danger: true,
+    });
+    if (!ok) return;
     setError('');
-    setBusy(true);
+    setBusy('delete');
     const res = await adminSend('DELETE', `/roles/${role.id}`);
     if (!res.ok) {
       setError(res.error);
-      setBusy(false);
+      setBusy('');
       return;
     }
+    toast.success(`نقش «${role.name}» حذف شد.`);
     router.push('/admin/system/roles');
     router.refresh();
   }
 
   return (
-    <form className={ui.form} onSubmit={onSubmit} noValidate>
-      {error && (
-        <p className={ui.error} role="alert">
-          {error}
-        </p>
-      )}
+    <Form onSubmit={onSubmit}>
+      <FormError>{error}</FormError>
 
-      <div className={ui.field}>
-        <label className={`${ui.label} ${ui.required}`} htmlFor="name">
-          نام نقش
-        </label>
-        <input id="name" className={ui.input} value={name} onChange={(e) => setName(e.target.value)} />
-      </div>
+      <Field label="نام نقش" htmlFor="name" required>
+        <Input id="name" value={name} onChange={(e) => setName(e.target.value)} />
+      </Field>
 
-      <label className={ui.check}>
-        <input type="checkbox" checked={all} onChange={(e) => setAll(e.target.checked)} />
-        <span>
-          <strong>همه‌ی دسترسی‌ها</strong>
-          <span className={ui.hint} style={{ display: 'block' }}>
-            به همه‌ی بخش‌های پنل دسترسی دارد، از جمله بخش‌هایی که بعداً اضافه می‌شوند.
-          </span>
-        </span>
-      </label>
+      <Checkbox
+        label={<strong>همه‌ی دسترسی‌ها</strong>}
+        hint="به همه‌ی بخش‌های پنل دسترسی دارد، از جمله بخش‌هایی که بعداً اضافه می‌شوند."
+        checked={all}
+        onChange={(e) => setAll(e.target.checked)}
+      />
 
       {groups.map((g) => (
-        <fieldset key={g.title} className={`${ui.fieldset} ${all ? ui.fieldsetDisabled : ''}`} disabled={all}>
-          <legend>{g.title}</legend>
+        <Fieldset key={g.title} legend={g.title} disabled={all}>
           {g.items.map((p) => (
-            <label key={p.key} className={ui.check}>
-              <input
-                type="checkbox"
-                checked={all || selected.includes(p.key)}
-                onChange={(e) => toggle(p.key, e.target.checked)}
-              />
-              <span>{p.label}</span>
-            </label>
+            <Checkbox
+              key={p.key}
+              label={p.label}
+              checked={all || selected.includes(p.key)}
+              onChange={(e) => toggle(p.key, e.target.checked)}
+            />
           ))}
-        </fieldset>
+        </Fieldset>
       ))}
-      <p className={ui.hint}>داشبورد برای همه‌ی نقش‌ها باز است.</p>
+      <Hint>داشبورد برای همه‌ی نقش‌ها باز است.</Hint>
 
-      <div className={ui.actions}>
-        <button type="submit" className={`${ui.btn} ${ui.primary}`} disabled={busy}>
-          {busy ? 'در حال ذخیره…' : editing ? 'ذخیره‌ی تغییرات' : 'ساخت نقش'}
-        </button>
-        <Link href="/admin/system/roles" className={ui.btn}>
-          انصراف
-        </Link>
+      <FormActions>
+        <Button type="submit" variant="primary" loading={busy === 'save'} disabled={busy !== ''}>
+          {busy === 'save' ? 'در حال ذخیره…' : editing ? 'ذخیره‌ی تغییرات' : 'ساخت نقش'}
+        </Button>
+        <Button href="/admin/system/roles">انصراف</Button>
         {editing && (
           <>
-            <span className={ui.spacer} />
-            <button type="button" className={`${ui.btn} ${ui.danger}`} onClick={onDelete} disabled={busy}>
+            <Spacer />
+            <Button variant="danger" onClick={onDelete} loading={busy === 'delete'} disabled={busy !== ''}>
               حذف نقش
-            </button>
+            </Button>
           </>
         )}
-      </div>
-    </form>
+      </FormActions>
+    </Form>
   );
 }

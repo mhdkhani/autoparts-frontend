@@ -2,7 +2,8 @@
 import { cache } from 'react';
 import { cookies } from 'next/headers';
 import { backendFetch } from '@shared/backend';
-import type { AdminUser, Permission } from './types';
+import { hasAccess, navCrumbs, navItem, type NavHref, type Permission } from './nav';
+import type { AdminUser } from './types';
 
 /**
  * httpOnly cookie holding the admin JWT, set by the /admin/api proxy at login.
@@ -13,7 +14,8 @@ import type { AdminUser, Permission } from './types';
 export const ADMIN_COOKIE = 'ap_admin';
 export const ADMIN_COOKIE_PATH = '/admin';
 
-export type AdminSession = { user: AdminUser; permissions: Permission[] };
+/** GET /api/admin/auth/me — allPermissions / permissions are the token's (exactly what the API allows). */
+export type AdminSession = { user: AdminUser; allPermissions: boolean; permissions: string[] };
 
 /** This request's admin token (from the httpOnly cookie), or undefined. */
 export async function adminToken(): Promise<string | undefined> {
@@ -33,8 +35,22 @@ export const getAdminSession = cache(async (): Promise<AdminSession | null> => {
   return (await res.json()) as AdminSession;
 });
 
+/** For checks inside a page (e.g. show a link only if the admin may manage roles). */
 export function can(session: AdminSession | null, permission: Permission): boolean {
-  return Boolean(session?.permissions.includes(permission));
+  return hasAccess(permission, session);
+}
+
+/**
+ * Start of every panel page: who may open it is the `acl` of its menu item in lib/nav.ts (sub-pages such as
+ * new / [id] pass their list's href). null → render <Forbidden />. Also gives the breadcrumb and title.
+ *   const page = await adminPage('/admin/system/users');
+ *   if (!page) return <Forbidden />;
+ */
+export async function adminPage(href: NavHref) {
+  const hit = navItem(href)!;
+  const session = await getAdminSession();
+  if (!session || !hasAccess(hit.item.acl, session)) return null;
+  return { session, title: hit.item.label, crumbs: navCrumbs(hit), subCrumbs: navCrumbs(hit, true) };
 }
 
 /**

@@ -1,5 +1,6 @@
 import { backendFetch } from '@shared/backend';
 import { adminToken } from '@admin/lib/auth';
+import { Card } from './ui';
 import styles from './SystemStatus.module.css';
 
 type Check = { ok: boolean; detail?: unknown; error?: string; ms?: number };
@@ -45,7 +46,7 @@ export default async function SystemStatus() {
       <h2 className={styles.title}>وضعیت سرویس‌ها</h2>
       <div className={styles.grid}>
         {cards.map((c) => (
-          <div key={c.name} className={styles.card}>
+          <Card key={c.name} className={styles.tile}>
             <div className={styles.head}>
               <span className={c.ok ? styles.dotOk : styles.dotFail} />
               <strong dir="ltr">{c.name}</strong>
@@ -53,7 +54,7 @@ export default async function SystemStatus() {
             <div className={styles.detail} dir="ltr">
               {c.detail}
             </div>
-          </div>
+          </Card>
         ))}
       </div>
     </section>

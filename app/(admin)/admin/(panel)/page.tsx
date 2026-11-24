@@ -1,15 +1,18 @@
 import type { Metadata } from 'next';
+import Forbidden from '@admin/components/Forbidden';
 import SystemStatus from '@admin/components/SystemStatus';
+import { PageHeader } from '@admin/components/ui';
+import { adminPage } from '@admin/lib/auth';
+import { navLabel } from '@admin/lib/nav';
 
-export const metadata: Metadata = { title: 'داشبورد' };
+export const metadata: Metadata = { title: navLabel('/admin') };
 
-// Rendered per request: the backend isn't reachable during `next build`.
-export const dynamic = 'force-dynamic';
-
-export default function AdminDashboard() {
+export default async function AdminDashboard() {
+  const page = await adminPage('/admin');
+  if (!page) return <Forbidden />;
   return (
     <>
-      <h1>داشبورد</h1>
+      <PageHeader title={page.title} />
       <SystemStatus />
     </>
   );

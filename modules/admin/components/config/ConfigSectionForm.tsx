@@ -4,7 +4,8 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { adminSend } from '@admin/lib/client-api';
 import type { ConfigField, ConfigSection, ConfigValues } from '@admin/lib/types';
-import ui from '../ui.module.css';
+import { Button, Card, FormError, Input, Select, Spacer, Textarea, useToast } from '../ui';
+import ui from '../ui/ui.module.css';
 import css from './config.module.css';
 
 /** One settings section: its groups as cards, every field in a label | control row, one Save button. */
@@ -16,10 +17,10 @@ export default function ConfigSectionForm({
   initial: ConfigValues;
 }) {
   const router = useRouter();
+  const toast = useToast();
   const [saved, setSaved] = useState<ConfigValues>(initial);
   const [values, setValues] = useState<ConfigValues>(initial);
   const [error, setError] = useState('');
-  const [message, setMessage] = useState('');
   const [saving, setSaving] = useState(false);
 
   const changed = Object.keys(values).filter((p) => values[p] !== saved[p]);
@@ -35,13 +36,11 @@ export default function ConfigSectionForm({
 
   function set(path: string, value: string) {
     setValues((v) => ({ ...v, [path]: value }));
-    setMessage('');
   }
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
     setError('');
-    setMessage('');
     setSaving(true);
     const body = { values: Object.fromEntries(changed.map((p) => [p, values[p]])) };
     const res = await adminSend<{ values: ConfigValues }>('PUT', `/config/${section.key}`, body);
@@ -52,24 +51,16 @@ export default function ConfigSectionForm({
     }
     setSaved(res.data.values);
     setValues(res.data.values);
-    setMessage('تنظیمات ذخیره شد.');
+    toast.success('تنظیمات ذخیره شد.');
     router.refresh();
   }
 
   return (
     <form onSubmit={onSubmit} noValidate>
-      {error && (
-        <p className={ui.error} role="alert">
-          {error}
-        </p>
-      )}
+      <FormError>{error}</FormError>
 
       {section.groups.map((g) => (
-        <section key={g.key} className={css.group}>
-          <div className={css.groupHead}>
-            <h2 className={css.groupTitle}>{g.label}</h2>
-            {g.description && <p className={css.groupDesc}>{g.description}</p>}
-          </div>
+        <Card key={g.key} title={g.label} description={g.description} flush>
           <div className={css.fields}>
             {g.fields.map((f) => {
               const path = `${section.key}/${g.key}/${f.key}`;
@@ -86,25 +77,20 @@ export default function ConfigSectionForm({
               );
             })}
           </div>
-        </section>
+        </Card>
       ))}
 
       <div className={css.saveBar}>
-        <button type="submit" className={`${ui.btn} ${ui.primary}`} disabled={saving || !dirty}>
+        <Button type="submit" variant="primary" loading={saving} disabled={!dirty}>
           {saving ? 'در حال ذخیره…' : 'ذخیره‌ی تنظیمات'}
-        </button>
+        </Button>
         {dirty && <span className={css.dirty}>تغییرات ذخیره نشده دارید.</span>}
-        {!dirty && message && (
-          <span className={css.saved} role="status">
-            {message}
-          </span>
-        )}
         {dirty && (
           <>
-            <span className={ui.spacer} />
-            <button type="button" className={ui.btn} onClick={() => setValues(saved)} disabled={saving}>
+            <Spacer />
+            <Button onClick={() => setValues(saved)} disabled={saving}>
               لغو تغییرات
-            </button>
+            </Button>
           </>
         )}
       </div>
@@ -123,43 +109,32 @@ function FieldControl({ id, field, value, onChange }: ControlProps) {
   switch (field.type) {
     case 'text':
       return (
-        <input
+        <Input
           id={id}
-          className={ui.input}
-          style={{ width: '100%' }}
-          dir={field.ltr ? 'ltr' : undefined}
+          ltr={field.ltr}
           maxLength={field.maxLength}
           value={value}
           onChange={(e) => onChange(e.target.value)}
         />
       );
     case 'textarea':
-      return (
-        <textarea
-          id={id}
-          className={`${ui.input} ${css.textarea}`}
-          style={{ width: '100%' }}
-          maxLength={field.maxLength}
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-        />
-      );
+      return <Textarea id={id} maxLength={field.maxLength} value={value} onChange={(e) => onChange(e.target.value)} />;
     case 'boolean':
       return (
-        <select id={id} className={ui.select} value={value} onChange={(e) => onChange(e.target.value)}>
+        <Select id={id} value={value} onChange={(e) => onChange(e.target.value)}>
           <option value="1">فعال</option>
           <option value="0">غیرفعال</option>
-        </select>
+        </Select>
       );
     case 'select':
       return (
-        <select id={id} className={ui.select} style={{ width: '100%' }} value={value} onChange={(e) => onChange(e.target.value)}>
+        <Select id={id} value={value} onChange={(e) => onChange(e.target.value)}>
           {field.options?.map((o) => (
             <option key={o.value} value={o.value}>
               {o.label}
             </option>
           ))}
-        </select>
+        </Select>
       );
     case 'image':
       return <ImageControl id={id} value={value} onChange={onChange} />;
@@ -203,20 +178,16 @@ function ImageControl({ id, value, onChange }: Omit<ControlProps, 'field'>) {
           hidden
           onChange={(e) => upload(e.target.files?.[0])}
         />
-        <button type="button" className={ui.btn} onClick={() => input.current?.click()} disabled={busy}>
+        <Button onClick={() => input.current?.click()} loading={busy}>
           {busy ? 'در حال آپلود…' : value ? 'تغییر تصویر' : 'انتخاب تصویر'}
-        </button>
+        </Button>
         {value && (
-          <button type="button" className={`${ui.btn} ${ui.danger}`} onClick={() => onChange('')} disabled={busy}>
+          <Button variant="danger" onClick={() => onChange('')} disabled={busy}>
             حذف
-          </button>
+          </Button>
         )}
       </div>
-      {error && (
-        <p className={ui.error} role="alert" style={{ marginTop: '0.5rem' }}>
-          {error}
-        </p>
-      )}
+      {error && <div style={{ marginTop: '0.5rem' }}><FormError>{error}</FormError></div>}
     </div>
   );
 }

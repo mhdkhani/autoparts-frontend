@@ -6,11 +6,47 @@
   box-sizing: border-box;
 }
 
+/* Panel colors — used by the UI kit (components/ui). Change a color here, not in components. */
+:root {
+  --c-primary: #2563eb;
+  --c-primary-hover: #1d4ed8;
+  --c-primary-soft: #eff6ff;
+  --c-danger: #dc2626;
+  --c-danger-soft: #fef2f2;
+  --c-success: #166534;
+  --c-success-soft: #dcfce7;
+  --c-warning: #b45309;
+  --c-warning-soft: #fef3c7;
+  --c-info: #4338ca;
+  --c-info-soft: #eef2ff;
+  --c-text: #1f2937;
+  --c-text-2: #4b5563;
+  --c-muted: #6b7280;
+  --c-border: #e5e7eb;
+  --c-border-strong: #d1d5db;
+  --c-row: #f1f5f9;
+  --c-surface: #fff;
+  --c-surface-2: #f9fafb;
+  --c-bg: #f4f6f9;
+  --radius: 8px;
+  --radius-sm: 6px;
+  --focus-ring: 0 0 0 3px rgba(37, 99, 235, 0.2);
+}
+
 body {
   margin: 0;
-  font-family: system-ui, Tahoma, sans-serif;
-  background: #f4f6f9;
-  color: #1f2937;
+  /* --font-admin = Vazirmatn + its fallbacks (modules/admin/fonts/vazirmatn.ts), set on <html> by the admin root layout */
+  font-family: var(--font-admin);
+  background: var(--c-bg);
+  color: var(--c-text);
+}
+
+/* form controls don't inherit the page font by default */
+button,
+input,
+select,
+textarea {
+  font: inherit;
 }
 
 a {

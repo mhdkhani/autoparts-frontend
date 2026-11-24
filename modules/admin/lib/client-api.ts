@@ -11,11 +11,14 @@ export type SendResult<T> = { ok: true; data: T } | { ok: false; status: number;
  * POST / PUT / PATCH / DELETE `/admin/api${path}` (= `/api/admin${path}` of the backend).
  * A FormData body is sent as multipart (file upload), anything else as JSON; no other headers.
  * Errors come back as one Persian message (the backend's validation messages joined).
+ * A 401 means the session ended → login page; the login form itself passes { redirectOn401: false }
+ * (there 401 = wrong username / password, and the backend's message is shown).
  */
 export async function adminSend<T = unknown>(
   method: 'POST' | 'PUT' | 'PATCH' | 'DELETE',
   path: string,
   body?: unknown,
+  { redirectOn401 = true }: { redirectOn401?: boolean } = {},
 ): Promise<SendResult<T>> {
   const multipart = body instanceof FormData;
   let res: Response;
@@ -31,7 +34,7 @@ export async function adminSend<T = unknown>(
     return { ok: false, status: 0, error: 'ارتباط با سرور برقرار نشد. دوباره تلاش کنید.' };
   }
 
-  if (res.status === 401) {
+  if (res.status === 401 && redirectOn401) {
     window.location.assign('/admin/login');
     return { ok: false, status: 401, error: 'لطفاً دوباره وارد شوید.' };
   }

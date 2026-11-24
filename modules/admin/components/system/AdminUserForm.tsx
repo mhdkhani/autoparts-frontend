@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
 import { adminSend } from '@admin/lib/client-api';
 import type { AdminRole, AdminUser } from '@admin/lib/types';
-import ui from '../ui.module.css';
+import { Button, Checkbox, Field, Form, FormActions, FormError, Input, Select, useToast } from '../ui';
 
 const PASSWORD_MIN = 10;
 
@@ -22,6 +22,7 @@ type Props = {
 /** «افزودن کاربر» / «ویرایش کاربر»: name, email, password, role (+ username for logging in). */
 export default function AdminUserForm({ roles, canManageRoles, user, isSelf = false }: Props) {
   const router = useRouter();
+  const toast = useToast();
   const editing = Boolean(user);
   const [fullName, setFullName] = useState(user?.fullName ?? '');
   const [email, setEmail] = useState(user?.email ?? '');
@@ -74,99 +75,87 @@ export default function AdminUserForm({ roles, canManageRoles, user, isSelf = fa
       setSaving(false);
       return;
     }
+    toast.success(editing ? 'تغییرات کاربر ذخیره شد.' : 'کاربر جدید ساخته شد.');
     router.push('/admin/system/users');
     router.refresh();
   }
 
   return (
-    <form className={ui.form} onSubmit={onSubmit} noValidate>
-      {error && (
-        <p className={ui.error} role="alert">
-          {error}
-        </p>
-      )}
+    <Form onSubmit={onSubmit}>
+      <FormError>{error}</FormError>
 
-      <div className={ui.field}>
-        <label className={`${ui.label} ${ui.required}`} htmlFor="fullName">
-          نام و نام خانوادگی
-        </label>
-        <input id="fullName" className={ui.input} value={fullName} onChange={(e) => setFullName(e.target.value)} />
-      </div>
+      <Field label="نام و نام خانوادگی" htmlFor="fullName" required>
+        <Input id="fullName" value={fullName} onChange={(e) => setFullName(e.target.value)} />
+      </Field>
 
-      <div className={ui.field}>
-        <label className={`${ui.label} ${ui.required}`} htmlFor="email">
-          ایمیل
-        </label>
-        <input
-          id="email"
-          type="email"
-          dir="ltr"
-          className={ui.input}
-          autoComplete="off"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-        />
-      </div>
+      <Field label="ایمیل" htmlFor="email" required>
+        <Input id="email" type="email" ltr autoComplete="off" value={email} onChange={(e) => setEmail(e.target.value)} />
+      </Field>
 
-      <div className={ui.field}>
-        <label className={`${ui.label} ${editing ? '' : ui.required}`} htmlFor="username">
-          نام کاربری
-        </label>
-        <input
+      <Field
+        label="نام کاربری"
+        htmlFor="username"
+        required={!editing}
+        hint={editing ? 'نام کاربری قابل تغییر نیست.' : 'برای ورود به پنل (ورود با ایمیل هم ممکن است).'}
+      >
+        <Input
           id="username"
-          dir="ltr"
-          className={ui.input}
+          ltr
           autoComplete="off"
           readOnly={editing}
           value={username}
           onChange={(e) => setUsername(e.target.value)}
         />
-        <span className={ui.hint}>
-          {editing ? 'نام کاربری قابل تغییر نیست.' : 'برای ورود به پنل (ورود با ایمیل هم ممکن است).'}
-        </span>
-      </div>
+      </Field>
 
-      <div className={ui.field}>
-        <label className={`${ui.label} ${editing ? '' : ui.required}`} htmlFor="password">
-          {editing ? 'رمز عبور جدید' : 'رمز عبور'}
-        </label>
-        <input
+      <Field
+        label={editing ? 'رمز عبور جدید' : 'رمز عبور'}
+        htmlFor="password"
+        required={!editing}
+        hint={
+          <>
+            حداقل {PASSWORD_MIN} کاراکتر.
+            {editing && ' خالی بگذارید تا رمز فعلی بماند. با تغییر رمز، کاربر از همه‌ی دستگاه‌ها خارج می‌شود.'}
+          </>
+        }
+      >
+        <Input
           id="password"
           type="password"
-          dir="ltr"
-          className={ui.input}
+          ltr
           autoComplete="new-password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
         />
-        <span className={ui.hint}>
-          حداقل {PASSWORD_MIN} کاراکتر.
-          {editing && ' خالی بگذارید تا رمز فعلی بماند. با تغییر رمز، کاربر از همه‌ی دستگاه‌ها خارج می‌شود.'}
-        </span>
-      </div>
+      </Field>
 
-      <div className={ui.field}>
-        <label className={`${ui.label} ${editing ? '' : ui.required}`} htmlFor="password2">
-          تکرار رمز عبور
-        </label>
-        <input
+      <Field label="تکرار رمز عبور" htmlFor="password2" required={!editing}>
+        <Input
           id="password2"
           type="password"
-          dir="ltr"
-          className={ui.input}
+          ltr
           autoComplete="new-password"
           value={password2}
           onChange={(e) => setPassword2(e.target.value)}
         />
-      </div>
+      </Field>
 
-      <div className={ui.field}>
-        <label className={`${ui.label} ${ui.required}`} htmlFor="role">
-          نقش
-        </label>
-        <select
+      <Field
+        label="نقش"
+        htmlFor="role"
+        required
+        hint={
+          isSelf
+            ? 'نقش خودتان را نمی‌توانید تغییر دهید.'
+            : canManageRoles && (
+                <>
+                  نقش مناسب نیست؟ <Link href="/admin/system/roles/new">تعریف نقش جدید</Link>
+                </>
+              )
+        }
+      >
+        <Select
           id="role"
-          className={ui.select}
           value={roleId}
           disabled={isSelf}
           onChange={(e) => setRoleId(e.target.value ? Number(e.target.value) : '')}
@@ -178,43 +167,25 @@ export default function AdminUserForm({ roles, canManageRoles, user, isSelf = fa
               {r.allPermissions ? ' (همه‌ی دسترسی‌ها)' : ''}
             </option>
           ))}
-        </select>
-        <span className={ui.hint}>
-          {isSelf
-            ? 'نقش خودتان را نمی‌توانید تغییر دهید.'
-            : canManageRoles && (
-                <>
-                  نقش مناسب نیست؟ <Link href="/admin/system/roles/new">تعریف نقش جدید</Link>
-                </>
-              )}
-        </span>
-      </div>
+        </Select>
+      </Field>
 
       {editing && (
-        <label className={ui.check}>
-          <input
-            type="checkbox"
-            checked={isActive}
-            disabled={isSelf}
-            onChange={(e) => setIsActive(e.target.checked)}
-          />
-          <span>
-            حساب فعال است
-            <span className={ui.hint} style={{ display: 'block' }}>
-              کاربر غیرفعال نمی‌تواند وارد پنل شود.
-            </span>
-          </span>
-        </label>
+        <Checkbox
+          label="حساب فعال است"
+          hint="کاربر غیرفعال نمی‌تواند وارد پنل شود."
+          checked={isActive}
+          disabled={isSelf}
+          onChange={(e) => setIsActive(e.target.checked)}
+        />
       )}
 
-      <div className={ui.actions}>
-        <button type="submit" className={`${ui.btn} ${ui.primary}`} disabled={saving}>
+      <FormActions>
+        <Button type="submit" variant="primary" loading={saving}>
           {saving ? 'در حال ذخیره…' : editing ? 'ذخیره‌ی تغییرات' : 'ساخت کاربر'}
-        </button>
-        <Link href="/admin/system/users" className={ui.btn}>
-          انصراف
-        </Link>
-      </div>
-    </form>
+        </Button>
+        <Button href="/admin/system/users">انصراف</Button>
+      </FormActions>
+    </Form>
   );
 }

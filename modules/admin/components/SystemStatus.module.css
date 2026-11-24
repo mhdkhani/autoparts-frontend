@@ -1,7 +1,7 @@
 .title {
   font-size: 1rem;
   margin: 0 0 0.75rem;
-  color: #4b5563;
+  color: var(--c-text-2);
 }
 
 .grid {
@@ -10,11 +10,9 @@
   gap: 1rem;
 }
 
-.card {
-  background: #fff;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  padding: 1rem;
+/* the tiles are ui Cards; the grid's gap replaces their bottom margin */
+.tile {
+  margin: 0;
 }
 
 .head {
@@ -36,11 +34,11 @@
 }
 
 .dotFail {
-  background: #dc2626;
+  background: var(--c-danger);
 }
 
 .detail {
   font-size: 0.8rem;
-  color: #6b7280;
+  color: var(--c-muted);
   overflow-wrap: anywhere;
 }

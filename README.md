@@ -18,11 +18,17 @@ app/
     layout.tsx          #   root layout + admin theme (noindex)
     admin/api/[...path]/route.ts   # proxy to the admin API (adds Authorization: Bearer)
     admin/login/        #   login form (no sidebar)
-    admin/(panel)/      #   sidebar shell + session check; dashboard, not-found, [...missing]
+    admin/(panel)/      #   sidebar shell + session check; dashboard, not-found,
+                        #   [...missing] (= «در حال ساخت» for menu items marked soon, else 404)
       system/users/, system/locked-users/, system/roles/, system/config/[section]/
 modules/
   front/                # front components, styles, lib  → import as @front/...
-  admin/                # admin components (system/, config/), styles, lib  → import as @admin/...
+  admin/                # admin module  → import as @admin/...
+    components/ui/      #   the panel's own UI kit (see below)
+    components/         #   shell, sidebar, system/ and config/ pages' components
+    fonts/              #   Vazirmatn (self-hosted, next/font/local), admin only
+    lib/nav.ts          #   ⭐ the admin menu + each item's acl — the only file to edit for menu changes
+    styles/global.css   #   color tokens (--c-primary, …) + font
 shared/                 # code both may use → @shared/...  (backend.ts: backendFetch)
 ```
 
@@ -74,14 +80,37 @@ browser ──(httpOnly ap_admin cookie, Path=/admin)──▶ /admin/api/* (Nex
 The real protection is the backend: every admin API endpoint checks the token and the role's permissions again.
 
 ## Admin permissions UI («سایت › دسترسی‌ها»)
-- Sidebar (`modules/admin/components/AdminNav.tsx`): collapsible groups; an item with a `permission` is shown only
-  if the session has it (`session.permissions` from `/me`).
+- ⭐ **Menu = one file:** `modules/admin/lib/nav.ts`. Every item must declare its `acl`: `'superadmin'` (only a role
+  with all permissions), a permission key (roles that have it), or `'any'` (dashboard only). The sidebar (`AdminNav.tsx`),
+  page access (`adminPage(href)` in `lib/auth.ts`), breadcrumbs, page titles (`navLabel`), the «در حال ساخت» page and
+  the `Permission` / `NavHref` types are all derived from it — there is no second list of permission keys.
+  `adminPage()` only accepts hrefs that exist in the menu, so removing an item breaks its page's typecheck (fail-closed).
+- Items not built yet are `soon(href, label, acl)`: they have their real URL, no page file, and the panel's catch-all
+  shows «در حال ساخت» for them to admins their acl allows. Building the real page replaces it.
+  Below 768px the sidebar slides in from the right (☰ in the header).
 - Pages under `app/(admin)/admin/(panel)/system/`: `users` (list, `new`, `[id]` edit), `locked-users`, `roles`
-  (list, `new`, `[id]` edit/delete). Each page checks `can(session, '<permission>')` and shows `<Forbidden />` otherwise.
+  (list, `new`, `[id]` edit/delete). Each page starts with `const page = await adminPage('<menu href>')` and shows
+  `<Forbidden />` when it returns null; `page.title` / `page.crumbs` come from the menu. `can(session, key)` is only for
+  checks inside a page.
 - Server pages read with `adminGet()` (`lib/api.ts` → `backendFetch()` with the token from the cookie).
   Client forms write with `adminSend()` (`lib/client-api.ts`) through the `/admin/api` proxy.
 - Hiding menu items / pages is only for the UI: every admin API checks the token and the role's ACL itself.
-- Shared page styles: `modules/admin/components/ui.module.css`. Dates: `faDate()` (Jalali, Tehran time).
+- Dates: `faDate()` (Jalali, Tehran time).
+
+## Admin UI kit (`modules/admin/components/ui`)
+Build every panel page from these (Ant Design was tried and rejected) — `import { … } from '@admin/components/ui'`:
+
+- Files: `base.tsx` (`cx`, `Icon`, `Button`, `PageHeader`, `Card`, `EmptyState`, `StatusBadge`), `DataTable.tsx`, `form.tsx`,
+  `UiProvider.tsx`, `ui.module.css`, `index.ts`. Add new pieces to these files — no new files, no copies.
+- `PageHeader` (title, breadcrumb `crumbs`, `subtitle`, `actions`), `Button` (`variant`, `size`, `loading`, `href`),
+  `Card` (`title`, `description`, `flush`), `Icon` (every panel icon), `EmptyState`, `StatusBadge` (`tone`).
+- `DataTable` + `Pagination`: columns as `Column<T>` (`render`, `link`, `sortable`, `ltr`, `wrap`); sort / page live in the URL (`?sort=&dir=&page=`).
+  `readTableState(searchParams, …)` reads them; `sortAndPage()` sorts and slices a full list in memory for APIs that
+  return everything (see `system/users/page.tsx`).
+- Forms: `Form`, `Field`, `Input` / `Textarea` (`ltr`), `Select`, `Checkbox`, `Fieldset`, `FormError`, `FormActions`.
+- `useToast()` (`toast.success` / `toast.error`) and `useConfirm()` (`await confirm({ title, message, danger })`),
+  provided by `UiProvider` inside `AdminShell` — a toast shown before `router.push()` stays visible on the next page.
+- Colors are CSS variables in `modules/admin/styles/global.css`; change them there, not in components.
 
 ## Site settings page («سایت › تنظیمات سایت»)
 - `/admin/system/config` → first section; `/admin/system/config/[section]` shows the side list (categories →

@@ -1,9 +1,9 @@
 import type { AdminUser } from '@admin/lib/types';
-import ui from '../ui.module.css';
+import { StatusBadge } from '../ui';
 
 /** قفل / غیرفعال / فعال */
 export default function UserStatusBadge({ user }: { user: AdminUser }) {
-  if (user.lockedUntil) return <span className={`${ui.badge} ${ui.locked}`}>قفل</span>;
-  if (!user.isActive) return <span className={`${ui.badge} ${ui.off}`}>غیرفعال</span>;
-  return <span className={`${ui.badge} ${ui.ok}`}>فعال</span>;
+  if (user.lockedUntil) return <StatusBadge tone="danger">قفل</StatusBadge>;
+  if (!user.isActive) return <StatusBadge tone="neutral">غیرفعال</StatusBadge>;
+  return <StatusBadge tone="success">فعال</StatusBadge>;
 }
