@@ -20,7 +20,7 @@ app/
     admin/login/        #   login form (no sidebar)
     admin/(panel)/      #   sidebar shell + session check; dashboard, not-found,
                         #   [...missing] (any /admin/* URL without a page → the panel's 404)
-      catalog/categories/, catalog/attributes/, catalog/attribute-sets/
+      catalog/categories/, catalog/attributes/, catalog/attribute-sets/, catalog/brands/
       system/users/, system/locked-users/, system/roles/, system/config/[section]/
 modules/
   front/                # front components, styles, lib  → import as @front/...
@@ -120,6 +120,9 @@ Build every panel page from these (Ant Design was tried and rejected) — `impor
   underline, H2 / H3, lists, links, clear formatting; pasting inserts plain text) for `is_wysiwyg` attributes — its HTML
   is only trusted after the API has cleaned it. Image fields need `uploadImage`, e.g. `(f) => adminUpload('/config/upload', f)`. Used by the settings form and
   the category form (and later the product form).
+- `FieldTabs` + `useFieldTabs(tabs, setError)`: a form whose fields sit in tabs (`FieldTab` → `TabField`: key, label,
+  `FieldSpec`, required, hint), one `Field` + `FieldControl` each. `checkRequired(values)` opens the tab of the first
+  empty required field and shows «… را وارد کنید» (forms are `noValidate`). Used by the category and brand forms.
 - `useToast()` (`toast.success` / `toast.error`) and `useConfirm()` (`await confirm({ title, message, danger })`),
   provided by `UiProvider` inside `AdminShell` — a toast shown before `router.push()` stays visible on the next page.
 - Colors are CSS variables in `modules/admin/styles/global.css`; change them there, not in components.
@@ -128,9 +131,16 @@ Build every panel page from these (Ant Design was tried and rejected) — `impor
 - `catalog/categories`: the tree as an indented table (parents first, children by position), «+ زیرشاخه» per row;
   `new` (`?parent=<id>` preselects the parent), `[id]` edit / delete (disabled while it has children).
 - `CategoryForm`: parent (the tree, minus the category's own sub-tree) and order, then the category set as `Tabs`
-  («عمومی», «محتوا», «سئو»), one `FieldControl` per field. Tabs, fields, required flags and defaults all come from the
-  `form` the API returns — nothing is hard-coded. A required field left empty switches to its tab.
+  («عمومی», «محتوا», «سئو») with `FieldTabs`. Tabs, fields, required flags and defaults all come from the `form` the
+  API returns — nothing is hard-coded. A required field left empty switches to its tab.
 - `categoryTree()` in `lib/types.ts` orders the tree for both.
+
+## Part brands («قطعات › برندهای قطعه»)
+- `catalog/brands`: list (logo, names, country, aliases, address) with search over every name and the address; `new`,
+  `[id]` edit / delete.
+- `BrandForm`: `FieldTabs` with «عمومی» (Persian / English name, origin country from `GET /admin/countries`, other
+  names one per line), «معرفی برند» (text editor + logo) and «سئو» (address, meta title / keywords / description,
+  robots). Optional fields are sent as `null` when empty.
 
 ## Attributes («قطعات › ویژگی‌ها» / «مجموعه‌ی ویژگی‌ها»)
 Magento-style EAV, backend `src/modules/catalog/attributes` (see the backend README). The panel shows and makes

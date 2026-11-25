@@ -121,13 +121,13 @@ export type EavValues = Record<string, string | number | boolean | null>;
 /** A category: its place in the tree + its attribute values (name, url_key, is_active, …). */
 export type Category = { id: number; parentId: number | null; position: number; values: EavValues };
 
+/** GET /admin/catalog/categories */
+export type CategoriesResponse = { categories: Category[]; form: EavForm };
+
 /**
  * The tree in display order (each parent followed by its children, siblings by position) with each category's depth.
  * Used by the list page and the parent dropdown of the form.
  */
-/** GET /admin/catalog/categories */
-export type CategoriesResponse = { categories: Category[]; form: EavForm };
-
 export function categoryTree(categories: Category[]): { category: Category; depth: number }[] {
   const children = new Map<number | null, Category[]>();
   for (const c of categories) children.set(c.parentId, [...(children.get(c.parentId) ?? []), c]);
@@ -141,3 +141,34 @@ export function categoryTree(categories: Category[]): { category: Category; dept
   walk(null, 0);
   return out;
 }
+
+/** GET /admin/countries — ISO 3166-1 countries, Persian alphabetical order. */
+export type Country = { code: string; nameFa: string; nameEn: string };
+
+/** meta robots choices of a page; '' / null = the site default (backend META_ROBOTS in brand.schema.ts). */
+export const META_ROBOTS = [
+  { value: 'index_follow', label: 'index, follow' },
+  { value: 'noindex_follow', label: 'noindex, follow' },
+  { value: 'index_nofollow', label: 'index, nofollow' },
+  { value: 'noindex_nofollow', label: 'noindex, nofollow' },
+] as const;
+
+/** A part brand (Bosch, Brembo, RIDEX) — the maker of a part, not a vehicle brand. Optional fields: null. */
+export type Brand = {
+  id: number;
+  nameFa: string;
+  nameEn: string | null;
+  /** other spellings; each leads to this brand only */
+  aliases: string[];
+  urlKey: string;
+  originCountryCode: string | null;
+  /** HTML from the text editor */
+  description: string | null;
+  logo: string | null;
+  metaTitle: string | null;
+  metaKeywords: string | null;
+  metaDescription: string | null;
+  metaRobots: (typeof META_ROBOTS)[number]['value'] | null;
+};
+/** A row of GET /admin/catalog/brands. */
+export type BrandListItem = Pick<Brand, 'id' | 'nameFa' | 'nameEn' | 'aliases' | 'urlKey' | 'originCountryCode' | 'logo'>;

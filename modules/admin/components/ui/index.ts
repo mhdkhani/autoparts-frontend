@@ -16,6 +16,7 @@ export {
   Field,
   FieldControl,
   Fieldset,
+  FieldTabs,
   Form,
   FormActions,
   FormError,
@@ -27,8 +28,11 @@ export {
   Spacer,
   Tabs,
   Textarea,
+  useFieldTabs,
   type FieldSpec,
+  type FieldTab,
   type Tab,
+  type TabField,
   type UploadImage,
 } from './form';
 export { UiProvider, useConfirm, useToast, type ConfirmOptions } from './UiProvider';

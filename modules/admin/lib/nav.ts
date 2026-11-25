@@ -33,6 +33,7 @@ export const NAV = [
           { href: '/admin/catalog/categories', label: 'دسته‌بندی‌ها', acl: 'catalog.categories' },
           { href: '/admin/catalog/attributes', label: 'ویژگی‌ها', acl: 'catalog.attributes' },
           { href: '/admin/catalog/attribute-sets', label: 'مجموعه‌ی ویژگی‌ها', acl: 'catalog.attribute_sets' },
+          { href: '/admin/catalog/brands', label: 'برندهای قطعه', acl: 'catalog.brands' },
         ],
       },
     ],

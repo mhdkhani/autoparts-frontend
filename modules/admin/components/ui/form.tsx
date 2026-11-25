@@ -441,3 +441,72 @@ export function Tabs({ tabs, active, onSelect }: { tabs: Tab[]; active?: string;
     </div>
   );
 }
+
+// ---------- a form whose fields sit in tabs (category attribute set, part brand) ----------
+
+/** One field of a tabbed form: where its value is kept (`key`), how it is shown and its input. */
+export type TabField = { key: string; label: string; field: FieldSpec; required?: boolean; hint?: string };
+export type FieldTab = { key: string; label: string; fields: TabField[] };
+
+/** Is a value empty? An editor's HTML counts as empty when it has no text («<p><br></p>»). */
+const isBlank = (field: FieldSpec, value: string) => !(field.type === 'editor' ? value.replace(/<[^>]*>/g, '') : value).trim();
+
+/**
+ * State of a FieldTabs form: the open tab, and `checkRequired`, which — for the first required field left empty —
+ * opens its tab, shows «… را وارد کنید» through `setError` and returns false (forms are noValidate, and a field
+ * on a hidden tab couldn't show the browser's message anyway).
+ */
+export function useFieldTabs(tabs: FieldTab[], setError: (message: string) => void) {
+  const [active, setActive] = useState(tabs[0]?.key ?? '');
+  function checkRequired(values: Record<string, string>): boolean {
+    for (const tab of tabs) {
+      const missing = tab.fields.find((f) => f.required && isBlank(f.field, values[f.key] ?? ''));
+      if (missing) {
+        setActive(tab.key);
+        setError(`«${missing.label}» را وارد کنید.`);
+        return false;
+      }
+    }
+    return true;
+  }
+  return { active, setActive, checkRequired };
+}
+
+/** Tabs of labelled fields; every value is a string (see FieldControl). Pair with useFieldTabs. */
+export function FieldTabs({
+  tabs,
+  values,
+  onChange,
+  uploadImage,
+  active,
+  onSelect,
+}: {
+  tabs: FieldTab[];
+  values: Record<string, string>;
+  onChange: (key: string, value: string) => void;
+  uploadImage?: UploadImage;
+  active: string;
+  onSelect: (key: string) => void;
+}) {
+  return (
+    <Tabs
+      active={active}
+      onSelect={onSelect}
+      tabs={tabs.map((t) => ({
+        key: t.key,
+        label: t.label,
+        content: t.fields.map((f) => (
+          <Field key={f.key} label={f.label} htmlFor={`field-${f.key}`} required={f.required} hint={f.hint}>
+            <FieldControl
+              id={`field-${f.key}`}
+              field={f.field}
+              value={values[f.key] ?? ''}
+              onChange={(v) => onChange(f.key, v)}
+              uploadImage={uploadImage}
+            />
+          </Field>
+        )),
+      }))}
+    />
+  );
+}

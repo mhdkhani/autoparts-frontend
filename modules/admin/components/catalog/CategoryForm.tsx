@@ -6,15 +6,16 @@ import { categoryTree, type Category, type EavField, type EavForm, type EavValue
 import {
   Button,
   Field,
-  FieldControl,
+  FieldTabs,
   Form,
   FormActions,
   FormError,
   Input,
   Select,
   Spacer,
-  Tabs,
+  useFieldTabs,
   type FieldSpec,
+  type FieldTab,
   type UploadImage,
 } from '../ui';
 import css from './catalog.module.css';
@@ -47,8 +48,13 @@ function fieldOf(f: EavField): FieldSpec {
   }
 }
 
-/** Is the form value empty? An editor's HTML counts as empty when it has no text («<p><br></p>»). */
-const isEmpty = (f: EavField, v: string) => !(f.isWysiwyg ? v.replace(/<[^>]*>/g, '') : v).trim();
+/** The attribute set as form tabs: each group a tab, each attribute a field keyed by its code. */
+const tabsOf = (eav: EavForm): FieldTab[] =>
+  eav.groups.map((g) => ({
+    key: String(g.id),
+    label: g.name,
+    fields: g.fields.map((f) => ({ key: f.code, label: f.labelFa, field: fieldOf(f), required: f.isRequired, hint: f.helpText ?? undefined })),
+  }));
 
 /** A value as the form edits it (a string): booleans '1' / '0', a select its option code, no value ''. */
 function formValue(f: EavField, v: EavValues[string] | undefined): string {
@@ -79,7 +85,8 @@ export default function CategoryForm({
   const form = useAdminForm(LIST);
   const editing = Boolean(category);
   const fields = eav.groups.flatMap((g) => g.fields);
-  const [tab, setTab] = useState(String(eav.groups[0]?.id));
+  const tabs = tabsOf(eav);
+  const tab = useFieldTabs(tabs, form.setError);
   const [parentId, setParentId] = useState(String(category?.parentId ?? defaultParentId ?? ''));
   const [position, setPosition] = useState(category ? String(category.position) : '');
   // edit: the stored values; new: each field's default value
@@ -97,12 +104,7 @@ export default function CategoryForm({
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
-    const missing = fields.find((f) => f.isRequired && isEmpty(f, values[f.code]));
-    if (missing) {
-      setTab(String(eav.groups.find((g) => g.fields.includes(missing))!.id)); // show the tab the empty field is on
-      form.setError(`«${missing.labelFa}» را وارد کنید.`);
-      return;
-    }
+    if (!tab.checkRequired(values)) return;
     if (position.trim() && !/^\d+$/.test(position.trim())) {
       form.setError('ترتیب نمایش باید عدد صحیح باشد.');
       return;
@@ -149,24 +151,13 @@ export default function CategoryForm({
         </Field>
       </div>
 
-      <Tabs
-        active={tab}
-        onSelect={setTab}
-        tabs={eav.groups.map((g) => ({
-          key: String(g.id),
-          label: g.name,
-          content: g.fields.map((f) => (
-            <Field key={f.code} label={f.labelFa} htmlFor={`value-${f.code}`} required={f.isRequired} hint={f.helpText}>
-              <FieldControl
-                id={`value-${f.code}`}
-                field={fieldOf(f)}
-                value={values[f.code]}
-                onChange={(v) => setValues((s) => ({ ...s, [f.code]: v }))}
-                uploadImage={uploadImage}
-              />
-            </Field>
-          )),
-        }))}
+      <FieldTabs
+        tabs={tabs}
+        values={values}
+        onChange={(key, v) => setValues((s) => ({ ...s, [key]: v }))}
+        uploadImage={uploadImage}
+        active={tab.active}
+        onSelect={tab.setActive}
       />
 
       <FormActions>
