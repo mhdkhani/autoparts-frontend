@@ -19,52 +19,16 @@ const ICONS = {
       <rect x="3" y="16" width="7" height="5" rx="1.5" />
     </>
   ),
-  vehicles: (
-    <>
-      <path d="M5 17H3v-5l2.2-5h13.6L21 12v5h-2" />
-      <path d="M3 12h18" />
-      <path d="M9.5 17h5" />
-      <circle cx="7.5" cy="17" r="2" />
-      <circle cx="16.5" cy="17" r="2" />
-    </>
-  ),
   parts: (
     <>
       <circle cx="12" cy="12" r="3" />
       <path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1" />
     </>
   ),
-  pricing: (
-    <>
-      <path d="M3 12V4a1 1 0 0 1 1-1h8l9 9-9 9z" />
-      <circle cx="7.5" cy="7.5" r="1.5" />
-    </>
-  ),
-  sales: (
-    <>
-      <path d="M2 3h3l2.5 12h11l2-8H6" />
-      <circle cx="9" cy="20" r="1.5" />
-      <circle cx="18" cy="20" r="1.5" />
-    </>
-  ),
   search: (
     <>
       <circle cx="11" cy="11" r="7" />
       <path d="m20 20-3.5-3.5" />
-    </>
-  ),
-  import: (
-    <>
-      <path d="M12 3v12" />
-      <path d="m7 10 5 5 5-5" />
-      <path d="M4 15v5h16v-5" />
-    </>
-  ),
-  content: (
-    <>
-      <path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8z" />
-      <path d="M14 3v5h5" />
-      <path d="M9 13h6M9 17h6" />
     </>
   ),
   system: (
@@ -80,13 +44,6 @@ const ICONS = {
     <>
       <path d="M3 13h5l1.5 3h5L16 13h5" />
       <path d="M5.5 5h13L21 13v6a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-6z" />
-    </>
-  ),
-  building: (
-    <>
-      <path d="M2 20h20" />
-      <path d="M5 20V9l7-5 7 5v11" />
-      <path d="M9 20v-6h6v6" />
     </>
   ),
   lock: (
@@ -231,7 +188,7 @@ export function Card({
 }
 
 // ---------- empty state ----------
-/** «Nothing here» message: empty tables, «در حال ساخت», «دسترسی ندارید», 404. */
+/** «Nothing here» message: empty tables / searches, «دسترسی ندارید», 404. */
 export function EmptyState({
   icon = 'empty',
   title,

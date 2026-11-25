@@ -1,8 +1,7 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
-import { adminSend } from '@admin/lib/client-api';
+import { useAdminForm } from '@admin/lib/client-api';
 import type { AdminRole, PermissionInfo } from '@admin/lib/types';
 import {
   Button,
@@ -15,8 +14,6 @@ import {
   Hint,
   Input,
   Spacer,
-  useConfirm,
-  useToast,
 } from '../ui';
 
 type Props = {
@@ -27,16 +24,12 @@ type Props = {
 
 /** «افزودن نقش» / «ویرایش نقش»: name + which parts of the panel it may use. */
 export default function AdminRoleForm({ permissions, role }: Props) {
-  const router = useRouter();
-  const toast = useToast();
-  const confirm = useConfirm();
+  const form = useAdminForm('/admin/system/roles');
   const editing = Boolean(role);
   const [name, setName] = useState(role?.name ?? '');
   const [all, setAll] = useState(role?.allPermissions ?? false);
   // keys come from GET /permissions (the backend's list), so they're plain strings here
   const [selected, setSelected] = useState<string[]>(role?.permissions ?? []);
-  const [error, setError] = useState('');
-  const [busy, setBusy] = useState<'' | 'save' | 'delete'>('');
 
   // permissions grouped by their menu path («سایت › دسترسی‌ها»)
   const groups = [...new Set(permissions.map((p) => p.group))].map((g) => ({
@@ -51,49 +44,26 @@ export default function AdminRoleForm({ permissions, role }: Props) {
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
     if (name.trim().length < 2) {
-      setError('نام نقش را وارد کنید.');
+      form.setError('نام نقش را وارد کنید.');
       return;
     }
-    setError('');
-    setBusy('save');
     const body = { name, allPermissions: all, permissions: all ? [] : selected };
-    const res = editing
-      ? await adminSend('PUT', `/roles/${role!.id}`, body)
-      : await adminSend('POST', '/roles', body);
-    if (!res.ok) {
-      setError(res.error);
-      setBusy('');
-      return;
-    }
-    toast.success(editing ? 'تغییرات نقش ذخیره شد.' : 'نقش جدید ساخته شد.');
-    router.push('/admin/system/roles');
-    router.refresh();
+    await (editing
+      ? form.send('PUT', `/roles/${role!.id}`, body, 'تغییرات نقش ذخیره شد.')
+      : form.send('POST', '/roles', body, 'نقش جدید ساخته شد.'));
   }
 
   async function onDelete() {
     if (!role) return;
-    const ok = await confirm({
+    await form.send('DELETE', `/roles/${role.id}`, undefined, `نقش «${role.name}» حذف شد.`, {
       title: 'حذف نقش',
       message: `نقش «${role.name}» حذف شود؟ این کار برگشت‌پذیر نیست.`,
-      danger: true,
     });
-    if (!ok) return;
-    setError('');
-    setBusy('delete');
-    const res = await adminSend('DELETE', `/roles/${role.id}`);
-    if (!res.ok) {
-      setError(res.error);
-      setBusy('');
-      return;
-    }
-    toast.success(`نقش «${role.name}» حذف شد.`);
-    router.push('/admin/system/roles');
-    router.refresh();
   }
 
   return (
     <Form onSubmit={onSubmit}>
-      <FormError>{error}</FormError>
+      <FormError>{form.error}</FormError>
 
       <Field label="نام نقش" htmlFor="name" required>
         <Input id="name" value={name} onChange={(e) => setName(e.target.value)} />
@@ -121,14 +91,14 @@ export default function AdminRoleForm({ permissions, role }: Props) {
       <Hint>داشبورد برای همه‌ی نقش‌ها باز است.</Hint>
 
       <FormActions>
-        <Button type="submit" variant="primary" loading={busy === 'save'} disabled={busy !== ''}>
-          {busy === 'save' ? 'در حال ذخیره…' : editing ? 'ذخیره‌ی تغییرات' : 'ساخت نقش'}
+        <Button type="submit" variant="primary" loading={form.busy === 'save'} disabled={form.busy !== ''}>
+          {form.busy === 'save' ? 'در حال ذخیره…' : editing ? 'ذخیره‌ی تغییرات' : 'ساخت نقش'}
         </Button>
         <Button href="/admin/system/roles">انصراف</Button>
         {editing && (
           <>
             <Spacer />
-            <Button variant="danger" onClick={onDelete} loading={busy === 'delete'} disabled={busy !== ''}>
+            <Button variant="danger" onClick={onDelete} loading={form.busy === 'delete'} disabled={form.busy !== ''}>
               حذف نقش
             </Button>
           </>

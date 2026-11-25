@@ -19,13 +19,14 @@ app/
     admin/api/[...path]/route.ts   # proxy to the admin API (adds Authorization: Bearer)
     admin/login/        #   login form (no sidebar)
     admin/(panel)/      #   sidebar shell + session check; dashboard, not-found,
-                        #   [...missing] (= «در حال ساخت» for menu items marked soon, else 404)
+                        #   [...missing] (any /admin/* URL without a page → the panel's 404)
+      catalog/attributes/, catalog/attribute-sets/
       system/users/, system/locked-users/, system/roles/, system/config/[section]/
 modules/
   front/                # front components, styles, lib  → import as @front/...
   admin/                # admin module  → import as @admin/...
     components/ui/      #   the panel's own UI kit (see below)
-    components/         #   shell, sidebar, system/ and config/ pages' components
+    components/         #   shell, sidebar, catalog/, system/ and config/ pages' components
     fonts/              #   Vazirmatn (self-hosted, next/font/local), admin only
     lib/nav.ts          #   ⭐ the admin menu + each item's acl — the only file to edit for menu changes
     styles/global.css   #   color tokens (--c-primary, …) + font
@@ -82,18 +83,20 @@ The real protection is the backend: every admin API endpoint checks the token an
 ## Admin permissions UI («سایت › دسترسی‌ها»)
 - ⭐ **Menu = one file:** `modules/admin/lib/nav.ts`. Every item must declare its `acl`: `'superadmin'` (only a role
   with all permissions), a permission key (roles that have it), or `'any'` (dashboard only). The sidebar (`AdminNav.tsx`),
-  page access (`adminPage(href)` in `lib/auth.ts`), breadcrumbs, page titles (`navLabel`), the «در حال ساخت» page and
+  page access (`adminPage(href)` in `lib/auth.ts`), breadcrumbs, page titles (`navLabel`) and
   the `Permission` / `NavHref` types are all derived from it — there is no second list of permission keys.
   `adminPage()` only accepts hrefs that exist in the menu, so removing an item breaks its page's typecheck (fail-closed).
-- Items not built yet are `soon(href, label, acl)`: they have their real URL, no page file, and the panel's catch-all
-  shows «در حال ساخت» for them to admins their acl allows. Building the real page replaces it.
-  Below 768px the sidebar slides in from the right (☰ in the header).
+- ⭐ **Only working sections are in the menu** — no «coming soon» placeholders. A section's item is added to `nav.ts`
+  when its page is built. Below 768px the sidebar slides in from the right (☰ in the header).
 - Pages under `app/(admin)/admin/(panel)/system/`: `users` (list, `new`, `[id]` edit), `locked-users`, `roles`
   (list, `new`, `[id]` edit/delete). Each page starts with `const page = await adminPage('<menu href>')` and shows
   `<Forbidden />` when it returns null; `page.title` / `page.crumbs` come from the menu. `can(session, key)` is only for
   checks inside a page.
 - Server pages read with `adminGet()` (`lib/api.ts` → `backendFetch()` with the token from the cookie).
   Client forms write with `adminSend()` (`lib/client-api.ts`) through the `/admin/api` proxy.
+- ⭐ Every form saves / deletes through `useAdminForm(listHref)` (`lib/client-api.ts`): busy state, the server's error,
+  success toast, back to the list, and a confirm dialog before a delete:
+  `form.send('PUT', '/roles/1', body, 'ذخیره شد.')`, `form.send('DELETE', '/roles/1', undefined, 'حذف شد.', { title, message })`.
 - Hiding menu items / pages is only for the UI: every admin API checks the token and the role's ACL itself.
 - Dates: `faDate()` (Jalali, Tehran time).
 
@@ -104,13 +107,25 @@ Build every panel page from these (Ant Design was tried and rejected) — `impor
   `UiProvider.tsx`, `ui.module.css`, `index.ts`. Add new pieces to these files — no new files, no copies.
 - `PageHeader` (title, breadcrumb `crumbs`, `subtitle`, `actions`), `Button` (`variant`, `size`, `loading`, `href`),
   `Card` (`title`, `description`, `flush`), `Icon` (every panel icon), `EmptyState`, `StatusBadge` (`tone`).
-- `DataTable` + `Pagination`: columns as `Column<T>` (`render`, `link`, `sortable`, `ltr`, `wrap`); sort / page live in the URL (`?sort=&dir=&page=`).
-  `readTableState(searchParams, …)` reads them; `sortAndPage()` sorts and slices a full list in memory for APIs that
-  return everything (see `system/users/page.tsx`).
-- Forms: `Form`, `Field`, `Input` / `Textarea` (`ltr`), `Select`, `Checkbox`, `Fieldset`, `FormError`, `FormActions`.
+- `DataTable` + `Pagination`: columns as `Column<T>` (`render`, `link`, `sortable`, `ltr`, `wrap`); search / sort / page live
+  in the URL (`?q=&sort=&dir=&page=`). `readTableState(searchParams, …)` reads them; `sortAndPage(rows, state, SORT, searchIn?)`
+  searches, sorts and slices a full list in memory for APIs that return everything (see `system/users/page.tsx`).
+  `search="…"` on `DataTable` adds a search box (plain GET form); `searchIn` returns the texts of a row to match — every
+  word must appear, Arabic «ي/ك», half-space and case are ignored (see `catalog/attributes/page.tsx`).
+- Forms: `Form`, `Field`, `Input` / `Textarea` (`ltr`), `Select`, `Checkbox`, `Fieldset`, `FormError` (scrolls itself into
+  view when an error appears), `FormActions`. Ordered lists: `OrderButtons` (▲ ▼ ✕) + `moveItem()`.
 - `useToast()` (`toast.success` / `toast.error`) and `useConfirm()` (`await confirm({ title, message, danger })`),
   provided by `UiProvider` inside `AdminShell` — a toast shown before `router.push()` stays visible on the next page.
 - Colors are CSS variables in `modules/admin/styles/global.css`; change them there, not in components.
+
+## Attributes («قطعات › ویژگی‌ها» / «مجموعه‌ی ویژگی‌ها»)
+Magento-style EAV, backend `src/modules/catalog/attributes` (see the backend README).
+- `catalog/attributes`: list with search (title / code), `new`, `[id]` — `AttributeForm`: titles, code and type (fixed after
+  creation), unit / min / max (numbers), max length (texts), options with a fixed English code (select / multiselect),
+  help text, «فیلتر» and «جستجو». Delete is disabled while the attribute is in a set.
+- `catalog/attribute-sets`: list, `new` (`?from=<id>` = copy of a set), `[id]` — `AttributeSetForm`: groups (ordered), each
+  group's attributes (ordered, «اجباری», move to another group); the whole set is saved at once.
+- Labels of the attribute types and the type groups (`OPTION_TYPES`, …) are in `lib/types.ts`, mirroring the backend.
 
 ## Site settings page («سایت › تنظیمات سایت»)
 - `/admin/system/config` → first section; `/admin/system/config/[section]` shows the side list (categories →

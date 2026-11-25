@@ -12,7 +12,7 @@ import css from './ui.module.css';
 
 type ToastKind = 'success' | 'error';
 type ToastItem = { id: number; kind: ToastKind; text: string };
-type ConfirmOptions = {
+export type ConfirmOptions = {
   title: string;
   message?: ReactNode;
   /** default: «تأیید» (or «حذف» when danger) */

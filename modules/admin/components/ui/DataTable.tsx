@@ -1,17 +1,19 @@
 import Link from 'next/link';
 import type { ReactNode } from 'react';
-import { cx, EmptyState } from './base';
+import { Button, cx, EmptyState, Icon } from './base';
+import { Input } from './form';
 import css from './ui.module.css';
 
-// List-page table (server component). Sort and page live in the URL (?sort=name&dir=desc&page=2):
+// List-page table (server component). Search, sort and page live in the URL (?q=…&sort=name&dir=desc&page=2):
 // they survive reloads and shared links, and server pages read them from `searchParams`.
 //
 //   const state = readTableState(await searchParams, { sortable: Object.keys(SORT), sort: 'id' });
-//   const { rows, total } = sortAndPage(list, state, SORT);       // or rows + total from a paged API
-//   <DataTable columns={...} rows={rows} rowKey={...} state={state} total={total} params={params} />
+//   const { rows, total } = sortAndPage(list, state, SORT, (r) => [r.name, r.code]);  // or rows + total from a paged API
+//   <DataTable columns={...} rows={rows} rowKey={...} state={state} total={total} params={params} search="جستجو…" />
 
 export type SortDir = 'asc' | 'desc';
-export type TableState = { page: number; pageSize: number; sort?: string; dir: SortDir };
+/** `q` = search text ('' = no search) */
+export type TableState = { page: number; pageSize: number; sort?: string; dir: SortDir; q: string };
 export type SearchParams = Record<string, string | string[] | undefined>;
 
 export type Column<T> = {
@@ -33,7 +35,7 @@ export type Column<T> = {
 const one = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v);
 const fa = (n: number) => n.toLocaleString('fa-IR');
 
-/** Reads page / sort / dir from the URL; `sortable` lists the allowed sort keys (anything else is ignored). */
+/** Reads page / sort / dir / q from the URL; `sortable` lists the allowed sort keys (anything else is ignored). */
 export function readTableState(
   params: SearchParams,
   opts: { pageSize?: number; sortable?: string[]; sort?: string; dir?: SortDir } = {},
@@ -46,24 +48,44 @@ export function readTableState(
     pageSize: opts.pageSize ?? 20,
     sort: sort && opts.sortable?.includes(sort) ? sort : opts.sort,
     dir: dir === 'asc' || dir === 'desc' ? dir : (opts.dir ?? 'asc'),
+    q: (one(params.q) ?? '').trim(),
   };
 }
 
 type SortValue = string | number | null | undefined;
 
 /**
- * Sorts and slices a full list in memory — for API endpoints that return everything at once.
- * When an endpoint gets server-side paging, pass its rows and total to DataTable instead.
+ * Searches, sorts and slices a full list in memory — for API endpoints that return everything at once.
+ * `searchIn` gives the texts of a row that `state.q` is matched against (every word of q must appear in one
+ * of them); without it the search box has no effect. When an endpoint gets server-side paging / search,
+ * pass its rows and total to DataTable instead.
  */
 export function sortAndPage<T>(
   rows: T[],
   state: TableState,
   sortBy: Record<string, (row: T) => SortValue>,
+  searchIn?: (row: T) => (string | null | undefined)[],
 ): { rows: T[]; total: number } {
+  const words = normalizeSearch(state.q).split(' ').filter(Boolean);
+  const found =
+    searchIn && words.length
+      ? rows.filter((row) => {
+          const text = normalizeSearch(searchIn(row).filter(Boolean).join(' '));
+          return words.every((w) => text.includes(w));
+        })
+      : rows;
   const get = state.sort ? sortBy[state.sort] : undefined;
-  const sorted = get ? [...rows].sort((a, b) => compare(get(a), get(b)) * (state.dir === 'desc' ? -1 : 1)) : rows;
-  const start = (clampPage(state.page, state.pageSize, rows.length) - 1) * state.pageSize;
-  return { rows: sorted.slice(start, start + state.pageSize), total: rows.length };
+  const sorted = get ? [...found].sort((a, b) => compare(get(a), get(b)) * (state.dir === 'desc' ? -1 : 1)) : found;
+  const start = (clampPage(state.page, state.pageSize, found.length) - 1) * state.pageSize;
+  return { rows: sorted.slice(start, start + state.pageSize), total: found.length };
+}
+
+/**
+ * Text as compared by the search: lower-case, Arabic «ي / ك» typed on some keyboards → Persian «ی / ک»,
+ * half-space (ZWNJ) and runs of spaces → one space. So «نيمه‌سنتتيک» finds «نیمه سنتتیک».
+ */
+function normalizeSearch(s: string): string {
+  return s.toLowerCase().replace(/ي/g, 'ی').replace(/ك/g, 'ک').replace(/[\u200c\s]+/g, ' ').trim();
 }
 
 /** a page past the end (old link, rows deleted) → the last page */
@@ -97,6 +119,7 @@ export function DataTable<T>({
   state,
   total,
   params = {},
+  search,
 }: {
   columns: Column<T>[];
   rows: T[];
@@ -107,9 +130,12 @@ export function DataTable<T>({
   /** number of rows across all pages (shows pagination) */
   total?: number;
   params?: SearchParams;
+  /** placeholder of a search box above the table (needs `state`; filter the rows with sortAndPage's `searchIn`) */
+  search?: string;
 }) {
   return (
     <>
+      {search && state && <SearchBox placeholder={search} state={state} params={params} />}
       <div className={css.tableWrap}>
         <table className={css.table}>
           <thead>
@@ -143,11 +169,43 @@ export function DataTable<T>({
           </tbody>
         </table>
       </div>
-      {rows.length === 0 && <EmptyState title={empty} />}
+      {rows.length === 0 && (
+        <EmptyState
+          icon={state?.q ? 'search' : 'empty'}
+          title={state?.q ? `نتیجه‌ای برای «${state.q}» پیدا نشد.` : empty}
+        />
+      )}
       {state && total !== undefined && (
         <Pagination page={state.page} pageSize={state.pageSize} total={total} params={params} />
       )}
     </>
+  );
+}
+
+/**
+ * Search box above a table: a plain GET form (works without JavaScript). Submitting keeps the current sort,
+ * drops the page (results start at page 1), and «پاک کردن» removes the search.
+ */
+function SearchBox({ placeholder, state, params }: { placeholder: string; state: TableState; params: SearchParams }) {
+  const keep = Object.entries(params).flatMap(([k, v]) => {
+    const value = one(v);
+    return k === 'q' || k === 'page' || value === undefined ? [] : [[k, value] as const];
+  });
+  return (
+    <form role="search" className={css.tableSearch}>
+      {keep.map(([k, v]) => (
+        <input key={k} type="hidden" name={k} value={v} />
+      ))}
+      <Input type="search" name="q" defaultValue={state.q} placeholder={placeholder} aria-label={placeholder} />
+      <Button type="submit" icon={<Icon name="search" size={16} />}>
+        جستجو
+      </Button>
+      {state.q && (
+        <Link href={queryHref(params, { q: undefined, page: undefined })} className={css.tableSearchClear}>
+          پاک کردن
+        </Link>
+      )}
+    </form>
   );
 }
 

@@ -1,11 +1,10 @@
 'use client';
 
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
-import { adminSend } from '@admin/lib/client-api';
+import { useAdminForm } from '@admin/lib/client-api';
 import type { AdminRole, AdminUser } from '@admin/lib/types';
-import { Button, Checkbox, Field, Form, FormActions, FormError, Input, Select, useToast } from '../ui';
+import { Button, Checkbox, Field, Form, FormActions, FormError, Input, Select } from '../ui';
 
 const PASSWORD_MIN = 10;
 
@@ -21,8 +20,7 @@ type Props = {
 
 /** «افزودن کاربر» / «ویرایش کاربر»: name, email, password, role (+ username for logging in). */
 export default function AdminUserForm({ roles, canManageRoles, user, isSelf = false }: Props) {
-  const router = useRouter();
-  const toast = useToast();
+  const form = useAdminForm('/admin/system/users');
   const editing = Boolean(user);
   const [fullName, setFullName] = useState(user?.fullName ?? '');
   const [email, setEmail] = useState(user?.email ?? '');
@@ -31,8 +29,6 @@ export default function AdminUserForm({ roles, canManageRoles, user, isSelf = fa
   const [password2, setPassword2] = useState('');
   const [roleId, setRoleId] = useState<number | ''>(user?.role.id ?? '');
   const [isActive, setIsActive] = useState(user?.isActive ?? true);
-  const [error, setError] = useState('');
-  const [saving, setSaving] = useState(false);
 
   function validate(): string {
     if (fullName.trim().length < 2) return 'نام را وارد کنید.';
@@ -52,11 +48,9 @@ export default function AdminUserForm({ roles, canManageRoles, user, isSelf = fa
     e.preventDefault();
     const problem = validate();
     if (problem) {
-      setError(problem);
+      form.setError(problem);
       return;
     }
-    setError('');
-    setSaving(true);
 
     const body = editing
       ? {
@@ -66,23 +60,14 @@ export default function AdminUserForm({ roles, canManageRoles, user, isSelf = fa
           ...(!isSelf && { roleId, isActive }),
         }
       : { username, fullName, email, password, roleId };
-    const res = editing
-      ? await adminSend('PATCH', `/users/${user!.id}`, body)
-      : await adminSend('POST', '/users', body);
-
-    if (!res.ok) {
-      setError(res.error);
-      setSaving(false);
-      return;
-    }
-    toast.success(editing ? 'تغییرات کاربر ذخیره شد.' : 'کاربر جدید ساخته شد.');
-    router.push('/admin/system/users');
-    router.refresh();
+    await (editing
+      ? form.send('PATCH', `/users/${user!.id}`, body, 'تغییرات کاربر ذخیره شد.')
+      : form.send('POST', '/users', body, 'کاربر جدید ساخته شد.'));
   }
 
   return (
     <Form onSubmit={onSubmit}>
-      <FormError>{error}</FormError>
+      <FormError>{form.error}</FormError>
 
       <Field label="نام و نام خانوادگی" htmlFor="fullName" required>
         <Input id="fullName" value={fullName} onChange={(e) => setFullName(e.target.value)} />
@@ -181,8 +166,8 @@ export default function AdminUserForm({ roles, canManageRoles, user, isSelf = fa
       )}
 
       <FormActions>
-        <Button type="submit" variant="primary" loading={saving}>
-          {saving ? 'در حال ذخیره…' : editing ? 'ذخیره‌ی تغییرات' : 'ساخت کاربر'}
+        <Button type="submit" variant="primary" loading={form.busy === 'save'}>
+          {form.busy === 'save' ? 'در حال ذخیره…' : editing ? 'ذخیره‌ی تغییرات' : 'ساخت کاربر'}
         </Button>
         <Button href="/admin/system/users">انصراف</Button>
       </FormActions>

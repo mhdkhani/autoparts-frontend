@@ -1,0 +1,107 @@
+/* «قطعات»: option rows of the attribute form and the attribute-set editor. Cards / inputs come from ui/. */
+
+/* ---------- attribute form: options of a select ---------- */
+/* Persian label | English label | code | ▲ ▼ ✕ — wraps on narrow screens */
+.optionRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.optionRow > input {
+  flex: 1 1 140px;
+  min-width: 0;
+}
+
+.optionRow > input.optionCode {
+  flex: 1 1 100px;
+  font-family: ui-monospace, monospace;
+  font-size: 0.9rem;
+}
+
+.addButton {
+  margin: 0.25rem 0 0.75rem;
+}
+
+.twoCols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 1rem;
+}
+
+/* ---------- attribute-set editor ---------- */
+.editor {
+  max-width: 900px;
+}
+
+.groupHead {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1.25rem;
+  border-bottom: 1px solid var(--c-row);
+  background: var(--c-surface-2);
+  border-radius: var(--radius) var(--radius) 0 0;
+}
+
+.groupName {
+  max-width: 320px;
+  font-weight: 600;
+}
+
+.items {
+  padding: 0.25rem 1.25rem;
+}
+
+.item {
+  display: flex;
+  flex-wrap: wrap; /* narrow screens: name on its own line, controls under it */
+  align-items: center;
+  gap: 0.5rem 1rem;
+  padding: 0.55rem 0;
+  border-bottom: 1px dashed var(--c-row);
+}
+
+.item:last-child {
+  border-bottom: 0;
+}
+
+.itemName {
+  flex: 1 1 240px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.code {
+  margin: 0 0.4rem; /* both sides: the span is dir=ltr inside RTL text */
+  font-family: ui-monospace, monospace;
+  font-size: 0.8rem;
+  color: var(--c-muted);
+}
+
+.inlineCheck {
+  margin: 0;
+  white-space: nowrap;
+}
+
+.small {
+  width: auto;
+  max-width: 200px;
+  padding: 0.3rem 0.5rem;
+  font-size: 0.85rem;
+}
+
+.addAttribute {
+  margin: 0.5rem 1.25rem 1rem;
+  width: auto;
+  min-width: 300px;
+  max-width: calc(100% - 2.5rem);
+}
+
+@media (max-width: 700px) {
+  .twoCols {
+    grid-template-columns: 1fr;
+  }
+}

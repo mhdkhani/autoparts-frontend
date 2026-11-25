@@ -11,5 +11,19 @@ export {
   type SearchParams,
   type TableState,
 } from './DataTable';
-export { Checkbox, Field, Fieldset, Form, FormActions, FormError, Hint, Input, Select, Spacer, Textarea } from './form';
-export { UiProvider, useConfirm, useToast } from './UiProvider';
+export {
+  Checkbox,
+  Field,
+  Fieldset,
+  Form,
+  FormActions,
+  FormError,
+  Hint,
+  Input,
+  moveItem,
+  OrderButtons,
+  Select,
+  Spacer,
+  Textarea,
+} from './form';
+export { UiProvider, useConfirm, useToast, type ConfirmOptions } from './UiProvider';

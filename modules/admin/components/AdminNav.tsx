@@ -83,7 +83,6 @@ export default function AdminNav({ access }: { access: Access }) {
                         className={cx(styles.subLink, isActive(i.href, pathname) && styles.active)}
                       >
                         <span className={styles.linkLabel}>{i.label}</span>
-                        {i.soon && <span className={styles.soon}>به‌زودی</span>}
                       </Link>
                     ))}
                   </div>

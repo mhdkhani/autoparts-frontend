@@ -1,3 +1,6 @@
+'use client';
+
+import { useEffect, useRef } from 'react';
 import type {
   FieldsetHTMLAttributes,
   InputHTMLAttributes,
@@ -5,7 +8,7 @@ import type {
   SelectHTMLAttributes,
   TextareaHTMLAttributes,
 } from 'react';
-import { cx } from './base';
+import { Button, cx } from './base';
 import css from './ui.module.css';
 
 // Form building blocks. Plain elements styled by the kit — they take every normal prop (value, onChange, …).
@@ -84,11 +87,19 @@ export function Fieldset({ legend, children, ...props }: FieldsetHTMLAttributes<
   );
 }
 
-/** Error from the server / validation, at the top of a form. Renders nothing when empty. */
+/**
+ * Error from the server / validation, at the top of a form. Renders nothing when empty.
+ * Scrolls itself into view when it appears, so it's seen even when Save was pressed at the bottom of a long form.
+ */
 export function FormError({ children }: { children?: ReactNode }) {
+  const ref = useRef<HTMLParagraphElement>(null);
+  useEffect(() => {
+    // instant, not smooth: a smooth scroll never runs while the tab is in the background
+    if (children) ref.current?.scrollIntoView({ block: 'center' });
+  }, [children]);
   if (!children) return null;
   return (
-    <p className={css.formError} role="alert">
+    <p ref={ref} className={css.formError} role="alert">
       {children}
     </p>
   );
@@ -106,4 +117,44 @@ export function Spacer() {
 /** Hint text (small, grey). */
 export function Hint({ children }: { children: ReactNode }) {
   return <p className={css.hint}>{children}</p>;
+}
+
+// ---------- ordered, editable lists (select options, groups of an attribute set, …) ----------
+
+/** list with item `index` moved by `delta` places (−1 = up, +1 = down); a copy, unchanged at the ends. */
+export function moveItem<T>(list: readonly T[], index: number, delta: number): T[] {
+  const next = [...list];
+  const to = index + delta;
+  if (to < 0 || to >= list.length) return next;
+  [next[index], next[to]] = [next[to], next[index]];
+  return next;
+}
+
+/** ▲ ▼ ✕ buttons of one row of an ordered list. */
+export function OrderButtons({
+  index,
+  count,
+  onMove,
+  onRemove,
+  removeLabel = 'حذف',
+}: {
+  index: number;
+  count: number;
+  onMove: (delta: number) => void;
+  onRemove: () => void;
+  removeLabel?: string;
+}) {
+  return (
+    <span className={css.orderButtons}>
+      <Button size="sm" variant="ghost" onClick={() => onMove(-1)} disabled={index === 0} aria-label="انتقال به بالا" title="بالا">
+        ▲
+      </Button>
+      <Button size="sm" variant="ghost" onClick={() => onMove(1)} disabled={index === count - 1} aria-label="انتقال به پایین" title="پایین">
+        ▼
+      </Button>
+      <Button size="sm" variant="ghost" onClick={onRemove} aria-label={removeLabel} title={removeLabel}>
+        ✕
+      </Button>
+    </span>
+  );
 }

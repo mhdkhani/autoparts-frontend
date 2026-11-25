@@ -1,6 +1,8 @@
 // ⭐ The panel menu — the ONE place to change it (PROJECT-NOTES §8).
 // Everything else reads from here: the sidebar (AdminNav), who may open each page (adminPage() in auth.ts),
-// breadcrumbs, page titles, the «در حال ساخت» page, and the frontend's list of permission keys (Permission).
+// breadcrumbs, page titles, and the frontend's list of permission keys (Permission).
+//
+// Only sections that work are listed: a new section gets its item here when its page is built.
 //
 // Every item MUST declare its `acl`:
 //   'superadmin'   only a role with «همه‌ی دسترسی‌ها» (مدیر کل)
@@ -13,36 +15,14 @@ export type NavLink = {
   readonly href: string;
   readonly label: string;
   readonly acl: Acl;
-  /** not built yet: the catch-all page shows «در حال ساخت» */
-  readonly soon?: boolean;
 };
 export type NavSection = { readonly title?: string; readonly items: readonly NavLink[] };
 export type NavGroup = { readonly key: string; readonly label: string; readonly icon: IconName; readonly sections: readonly NavSection[] };
 export type NavTop = NavLink & { readonly icon: IconName };
 export type NavEntry = NavTop | NavGroup;
 
-/** A section that isn't built yet. When it is: build its page at `href`, drop `soon`, set its permission key as acl. */
-const soon = <H extends string, A extends Acl>(href: H, label: string, acl: A) => ({ href, label, acl, soon: true }) as const;
-
 export const NAV = [
   { href: '/admin', label: 'داشبورد', icon: 'dashboard', acl: 'any' },
-  {
-    key: 'vehicles',
-    label: 'خودروها',
-    icon: 'vehicles',
-    sections: [
-      {
-        items: [
-          soon('/admin/vehicles/manufacturers', 'کمپانی‌های سازنده', 'superadmin'),
-          soon('/admin/vehicles/brands', 'برندهای عرضه', 'superadmin'),
-          soon('/admin/vehicles/models', 'مدل‌ها و خانواده‌ها', 'superadmin'),
-          soon('/admin/vehicles/generations', 'نسل‌ها', 'superadmin'),
-          soon('/admin/vehicles/variants', 'تیپ و نسخه‌ها', 'superadmin'),
-          soon('/admin/vehicles/engines', 'موتورها', 'superadmin'),
-        ],
-      },
-    ],
-  },
   {
     key: 'catalog',
     label: 'قطعات',
@@ -50,81 +30,8 @@ export const NAV = [
     sections: [
       {
         items: [
-          soon('/admin/catalog/products', 'محصولات', 'superadmin'),
-          soon('/admin/catalog/categories', 'دسته‌بندی‌ها', 'superadmin'),
-          soon('/admin/catalog/attributes', 'ویژگی‌ها', 'superadmin'),
-          soon('/admin/catalog/part-brands', 'برندهای قطعه', 'superadmin'),
-          soon('/admin/catalog/part-numbers', 'شماره‌های فنی', 'superadmin'),
-          soon('/admin/catalog/fitment', 'سازگاری‌ها', 'superadmin'),
-        ],
-      },
-    ],
-  },
-  {
-    key: 'pricing',
-    label: 'قیمت و موجودی',
-    icon: 'pricing',
-    sections: [
-      {
-        items: [
-          soon('/admin/pricing/bulk-edit', 'ویرایش گروهی', 'superadmin'),
-          soon('/admin/pricing/stock-statuses', 'وضعیت‌های موجودی', 'superadmin'),
-          soon('/admin/pricing/discounts', 'قیمت ویژه و تخفیف', 'superadmin'),
-        ],
-      },
-    ],
-  },
-  {
-    key: 'sales',
-    label: 'فروش',
-    icon: 'sales',
-    sections: [
-      {
-        items: [
-          soon('/admin/sales/orders', 'سفارش‌ها', 'superadmin'),
-          soon('/admin/sales/customers', 'مشتری‌ها', 'superadmin'),
-        ],
-      },
-    ],
-  },
-  {
-    key: 'search',
-    label: 'جستجو',
-    icon: 'search',
-    sections: [
-      {
-        items: [
-          soon('/admin/search/aliases', 'نام‌های جایگزین', 'superadmin'),
-          soon('/admin/search/synonyms', 'مترادف‌ها', 'superadmin'),
-          soon('/admin/search/no-results', 'جستجوهای بی‌نتیجه', 'superadmin'),
-          soon('/admin/search/part-requests', 'درخواست‌های قطعه', 'superadmin'),
-        ],
-      },
-    ],
-  },
-  {
-    key: 'import',
-    label: 'ورود داده',
-    icon: 'import',
-    sections: [
-      {
-        items: [
-          soon('/admin/import/files', 'ایمپورت اکسل و CSV', 'superadmin'),
-          soon('/admin/import/duplicates', 'موارد مشکوک به تکرار', 'superadmin'),
-        ],
-      },
-    ],
-  },
-  {
-    key: 'content',
-    label: 'محتوا',
-    icon: 'content',
-    sections: [
-      {
-        items: [
-          soon('/admin/content/pages', 'صفحات', 'superadmin'),
-          soon('/admin/content/sliders', 'اسلایدرها', 'superadmin'),
-          soon('/admin/content/seo', 'سئو', 'superadmin'),
+          { href: '/admin/catalog/attributes', label: 'ویژگی‌ها', acl: 'catalog.attributes' },
+          { href: '/admin/catalog/attribute-sets', label: 'مجموعه‌ی ویژگی‌ها', acl: 'catalog.attribute_sets' },
         ],
       },
     ],
@@ -145,13 +52,6 @@ export const NAV = [
       {
         title: 'تنظیمات',
         items: [{ href: '/admin/system/config', label: 'تنظیمات سایت', acl: 'system.config' }],
-      },
-      {
-        title: 'گزارش‌ها',
-        items: [
-          soon('/admin/system/audit-log', 'سوابق تغییرات', 'superadmin'),
-          soon('/admin/system/errors', 'خطاهای مهم', 'superadmin'),
-        ],
       },
     ],
   },

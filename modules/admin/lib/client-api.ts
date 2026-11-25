@@ -2,6 +2,10 @@
 // `Authorization: Bearer` from the httpOnly cookie and calls the API — JavaScript never sees the token,
 // and the API never receives a cookie (see app/(admin)/admin/api/[...path]/route.ts).
 
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
+import { useConfirm, useToast, type ConfirmOptions } from '@admin/components/ui';
+
 /** Base path of the panel's API proxy. */
 export const ADMIN_API = '/admin/api';
 
@@ -45,4 +49,42 @@ export async function adminSend<T = unknown>(
   const m = json?.message;
   const error = Array.isArray(m) ? m.join('، ') : typeof m === 'string' ? m : 'خطایی رخ داد. دوباره تلاش کنید.';
   return { ok: false, status: res.status, error };
+}
+
+/**
+ * Save / delete flow of a panel form: busy state, the server's error, a success toast, then back to the list.
+ *   const form = useAdminForm('/admin/system/roles');
+ *   form.send('PUT', `/roles/${id}`, body, 'تغییرات نقش ذخیره شد.');
+ *   form.send('DELETE', `/roles/${id}`, undefined, 'نقش حذف شد.', { title: 'حذف نقش', message: '…' });  // asks first
+ * Client components only (uses React hooks).
+ */
+export function useAdminForm(listHref: string) {
+  const router = useRouter();
+  const toast = useToast();
+  const confirm = useConfirm();
+  const [busy, setBusy] = useState<'' | 'save' | 'delete'>('');
+  const [error, setError] = useState('');
+
+  async function send(
+    method: 'POST' | 'PUT' | 'PATCH' | 'DELETE',
+    path: string,
+    body: unknown,
+    success: string,
+    ask?: ConfirmOptions,
+  ): Promise<void> {
+    if (ask && !(await confirm({ danger: true, ...ask }))) return;
+    setError('');
+    setBusy(method === 'DELETE' ? 'delete' : 'save');
+    const res = await adminSend(method, path, body);
+    if (!res.ok) {
+      setError(res.error);
+      setBusy('');
+      return;
+    }
+    toast.success(success);
+    router.push(listHref);
+    router.refresh();
+  }
+
+  return { busy, error, setError, send };
 }
