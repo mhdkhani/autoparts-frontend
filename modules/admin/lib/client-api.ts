@@ -51,6 +51,13 @@ export async function adminSend<T = unknown>(
   return { ok: false, status: res.status, error };
 }
 
+/** Uploads one image (multipart `file`) to an admin upload endpoint, e.g. '/config/upload'; data = { url }. */
+export function adminUpload(path: string, file: File): Promise<SendResult<{ url: string }>> {
+  const form = new FormData();
+  form.append('file', file);
+  return adminSend('POST', path, form);
+}
+
 /**
  * Save / delete flow of a panel form: busy state, the server's error, a success toast, then back to the list.
  *   const form = useAdminForm('/admin/system/roles');

@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useState, type FormEvent } from 'react';
 import { useAdminForm } from '@admin/lib/client-api';
 import {
-  ATTRIBUTE_TYPES,
+  ADMIN_ATTRIBUTE_TYPES,
   FILTERABLE_TYPES,
   NUMERIC_TYPES,
   OPTION_TYPES,
@@ -65,6 +65,7 @@ export default function AttributeForm({
   const [min, setMin] = useState(numText(attribute?.validation.min));
   const [max, setMax] = useState(numText(attribute?.validation.max));
   const [maxLength, setMaxLength] = useState(numText(attribute?.validation.maxLength));
+  const [isWysiwyg, setIsWysiwyg] = useState(attribute?.isWysiwyg ?? false);
   const [flags, setFlags] = useState<Record<Flag, boolean>>({
     isFilterable: attribute?.isFilterable ?? false,
     isSearchable: attribute?.isSearchable ?? false,
@@ -122,6 +123,7 @@ export default function AttributeForm({
       validation,
       ...flags,
       isFilterable: flags.isFilterable && filterable,
+      isWysiwyg: isWysiwyg && dataType === 'textarea',
       options: withOptions ? options.map(({ id, code, labelFa, labelEn }) => ({ id, code, labelFa, labelEn })) : [],
     };
     await (editing
@@ -165,7 +167,7 @@ export default function AttributeForm({
           disabled={editing}
           onChange={(e) => setDataType(e.target.value as AttributeType)}
         >
-          {ATTRIBUTE_TYPES.map((t) => (
+          {ADMIN_ATTRIBUTE_TYPES.map((t) => (
             <option key={t.value} value={t.value}>
               {t.label}
             </option>
@@ -193,6 +195,15 @@ export default function AttributeForm({
         <Field label="حداکثر طول (کاراکتر)" htmlFor="maxLength">
           <Input id="maxLength" ltr type="number" min={1} value={maxLength} onChange={(e) => setMaxLength(e.target.value)} />
         </Field>
+      )}
+
+      {dataType === 'textarea' && (
+        <Checkbox
+          label="ورود با ویرایشگر متن (پررنگ، عنوان، فهرست، لینک)"
+          hint="مقدار به‌صورت HTML ذخیره می‌شود؛ فقط قالب‌بندی‌های امن نگه داشته می‌شوند."
+          checked={isWysiwyg}
+          onChange={(e) => setIsWysiwyg(e.target.checked)}
+        />
       )}
 
       {withOptions && (

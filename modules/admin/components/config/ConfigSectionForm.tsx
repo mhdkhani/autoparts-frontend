@@ -1,12 +1,15 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useEffect, useRef, useState, type FormEvent } from 'react';
-import { adminSend } from '@admin/lib/client-api';
-import type { ConfigField, ConfigSection, ConfigValues } from '@admin/lib/types';
-import { Button, Card, FormError, Input, Select, Spacer, Textarea, useToast } from '../ui';
+import { useEffect, useState, type FormEvent } from 'react';
+import { adminSend, adminUpload } from '@admin/lib/client-api';
+import type { ConfigSection, ConfigValues } from '@admin/lib/types';
+import { Button, Card, FieldControl, FormError, Spacer, useToast, type UploadImage } from '../ui';
 import ui from '../ui/ui.module.css';
 import css from './config.module.css';
+
+/** Image fields of the settings (logo, …) are uploaded here; the returned URL is saved with the section. */
+const uploadImage: UploadImage = (file) => adminUpload('/config/upload', file);
 
 /** One settings section: its groups as cards, every field in a label | control row, one Save button. */
 export default function ConfigSectionForm({
@@ -70,7 +73,13 @@ export default function ConfigSectionForm({
                     {f.label}
                   </label>
                   <div>
-                    <FieldControl id={path} field={f} value={values[path] ?? ''} onChange={(v) => set(path, v)} />
+                    <FieldControl
+                      id={path}
+                      field={f}
+                      value={values[path] ?? ''}
+                      onChange={(v) => set(path, v)}
+                      uploadImage={uploadImage}
+                    />
                     {f.comment && <div className={ui.hint}>{f.comment}</div>}
                   </div>
                 </div>
@@ -95,99 +104,5 @@ export default function ConfigSectionForm({
         )}
       </div>
     </form>
-  );
-}
-
-type ControlProps = {
-  id: string;
-  field: ConfigField;
-  value: string;
-  onChange: (v: string) => void;
-};
-
-function FieldControl({ id, field, value, onChange }: ControlProps) {
-  switch (field.type) {
-    case 'text':
-      return (
-        <Input
-          id={id}
-          ltr={field.ltr}
-          maxLength={field.maxLength}
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-        />
-      );
-    case 'textarea':
-      return <Textarea id={id} maxLength={field.maxLength} value={value} onChange={(e) => onChange(e.target.value)} />;
-    case 'boolean':
-      return (
-        <Select id={id} value={value} onChange={(e) => onChange(e.target.value)}>
-          <option value="1">فعال</option>
-          <option value="0">غیرفعال</option>
-        </Select>
-      );
-    case 'select':
-      return (
-        <Select id={id} value={value} onChange={(e) => onChange(e.target.value)}>
-          {field.options?.map((o) => (
-            <option key={o.value} value={o.value}>
-              {o.label}
-            </option>
-          ))}
-        </Select>
-      );
-    case 'image':
-      return <ImageControl id={id} value={value} onChange={onChange} />;
-  }
-}
-
-/** Preview + upload (POST /admin/config/upload) + remove. The URL becomes the field value; it's stored on Save. */
-function ImageControl({ id, value, onChange }: Omit<ControlProps, 'field'>) {
-  const input = useRef<HTMLInputElement>(null);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState('');
-
-  async function upload(file: File | undefined) {
-    if (!file) return;
-    setError('');
-    setBusy(true);
-    const form = new FormData();
-    form.append('file', file);
-    const res = await adminSend<{ url: string }>('POST', '/config/upload', form);
-    setBusy(false);
-    if (input.current) input.current.value = '';
-    if (!res.ok) {
-      setError(res.error);
-      return;
-    }
-    onChange(res.data.url);
-  }
-
-  return (
-    <div>
-      <div className={css.logoBox}>
-        <div className={css.logoPreview}>
-          {/* eslint-disable-next-line @next/next/no-img-element -- served by nginx from the media volume */}
-          {value ? <img src={value} alt="" /> : 'بدون تصویر'}
-        </div>
-        <input
-          ref={input}
-          id={id}
-          type="file"
-          accept="image/png,image/jpeg,image/webp"
-          hidden
-          onChange={(e) => upload(e.target.files?.[0])}
-        />
-        <Button onClick={() => input.current?.click()} loading={busy}>
-          {busy ? 'در حال آپلود…' : value ? 'تغییر تصویر' : 'انتخاب تصویر'}
-        </Button>
-        {value && (
-          <Button variant="danger" onClick={() => onChange('')} disabled={busy}>
-            حذف
-          </Button>
-        )}
-      </div>
-      {error && <div style={{ marginTop: '0.5rem' }}><FormError>{error}</FormError></div>}
-    </div>
   );
 }

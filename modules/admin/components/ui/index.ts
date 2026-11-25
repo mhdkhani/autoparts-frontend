@@ -14,6 +14,7 @@ export {
 export {
   Checkbox,
   Field,
+  FieldControl,
   Fieldset,
   Form,
   FormActions,
@@ -24,6 +25,10 @@ export {
   OrderButtons,
   Select,
   Spacer,
+  Tabs,
   Textarea,
+  type FieldSpec,
+  type Tab,
+  type UploadImage,
 } from './form';
 export { UiProvider, useConfirm, useToast, type ConfirmOptions } from './UiProvider';

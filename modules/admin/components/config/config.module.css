@@ -70,33 +70,6 @@
   color: #374151;
 }
 
-.logoBox {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  flex-wrap: wrap;
-}
-
-.logoPreview {
-  width: 160px;
-  height: 80px;
-  border: 1px dashed var(--c-border-strong);
-  border-radius: var(--radius-sm);
-  background: var(--c-surface-2);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-  font-size: 0.8rem;
-  color: #9ca3af;
-}
-
-.logoPreview img {
-  max-width: 100%;
-  max-height: 100%;
-  object-fit: contain;
-}
-
 .saveBar {
   position: sticky;
   bottom: 0;

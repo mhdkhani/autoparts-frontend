@@ -20,7 +20,7 @@ app/
     admin/login/        #   login form (no sidebar)
     admin/(panel)/      #   sidebar shell + session check; dashboard, not-found,
                         #   [...missing] (any /admin/* URL without a page → the panel's 404)
-      catalog/attributes/, catalog/attribute-sets/
+      catalog/categories/, catalog/attributes/, catalog/attribute-sets/
       system/users/, system/locked-users/, system/roles/, system/config/[section]/
 modules/
   front/                # front components, styles, lib  → import as @front/...
@@ -114,12 +114,27 @@ Build every panel page from these (Ant Design was tried and rejected) — `impor
   word must appear, Arabic «ي/ك», half-space and case are ignored (see `catalog/attributes/page.tsx`).
 - Forms: `Form`, `Field`, `Input` / `Textarea` (`ltr`), `Select`, `Checkbox`, `Fieldset`, `FormError` (scrolls itself into
   view when an error appears), `FormActions`. Ordered lists: `OrderButtons` (▲ ▼ ✕) + `moveItem()`.
+- `Tabs`: tabs of a form (the groups of an attribute set); panels stay mounted, `active` / `onSelect` switch from outside.
+- `FieldControl`: the input for one field from a `FieldSpec` (`text`, `textarea`, `editor`, `boolean`, `select` — `placeholder`
+  adds an empty choice —, `image`; values are strings). `editor` is the kit's own text editor (no library: bold, italic,
+  underline, H2 / H3, lists, links, clear formatting; pasting inserts plain text) for `is_wysiwyg` attributes — its HTML
+  is only trusted after the API has cleaned it. Image fields need `uploadImage`, e.g. `(f) => adminUpload('/config/upload', f)`. Used by the settings form and
+  the category form (and later the product form).
 - `useToast()` (`toast.success` / `toast.error`) and `useConfirm()` (`await confirm({ title, message, danger })`),
   provided by `UiProvider` inside `AdminShell` — a toast shown before `router.push()` stays visible on the next page.
 - Colors are CSS variables in `modules/admin/styles/global.css`; change them there, not in components.
 
+## Categories («قطعات › دسته‌بندی‌ها»)
+- `catalog/categories`: the tree as an indented table (parents first, children by position), «+ زیرشاخه» per row;
+  `new` (`?parent=<id>` preselects the parent), `[id]` edit / delete (disabled while it has children).
+- `CategoryForm`: parent (the tree, minus the category's own sub-tree) and order, then the category set as `Tabs`
+  («عمومی», «محتوا», «سئو»), one `FieldControl` per field. Tabs, fields, required flags and defaults all come from the
+  `form` the API returns — nothing is hard-coded. A required field left empty switches to its tab.
+- `categoryTree()` in `lib/types.ts` orders the tree for both.
+
 ## Attributes («قطعات › ویژگی‌ها» / «مجموعه‌ی ویژگی‌ها»)
-Magento-style EAV, backend `src/modules/catalog/attributes` (see the backend README).
+Magento-style EAV, backend `src/modules/catalog/attributes` (see the backend README). The panel shows and makes
+product attributes only; category attributes are installed with the project.
 - `catalog/attributes`: list with search (title / code), `new`, `[id]` — `AttributeForm`: titles, code and type (fixed after
   creation), unit / min / max (numbers), max length (texts), options with a fixed English code (select / multiselect),
   help text, «فیلتر» and «جستجو». Delete is disabled while the attribute is in a set.

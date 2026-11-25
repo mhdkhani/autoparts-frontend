@@ -30,6 +30,7 @@ export const NAV = [
     sections: [
       {
         items: [
+          { href: '/admin/catalog/categories', label: 'دسته‌بندی‌ها', acl: 'catalog.categories' },
           { href: '/admin/catalog/attributes', label: 'ویژگی‌ها', acl: 'catalog.attributes' },
           { href: '/admin/catalog/attribute-sets', label: 'مجموعه‌ی ویژگی‌ها', acl: 'catalog.attribute_sets' },
         ],
