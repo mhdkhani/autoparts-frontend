@@ -165,7 +165,9 @@ export function OrderButtons({
 /** What FieldControl needs to know about a field (a site setting, or a category / product attribute). */
 export type FieldSpec = {
   /** editor = a textarea edited as formatted text (HTML; the API cleans it) */
-  type: 'text' | 'textarea' | 'editor' | 'boolean' | 'select' | 'image';
+  type: 'text' | 'textarea' | 'editor' | 'boolean' | 'select' | 'image' | 'int' | 'decimal' | 'date' | 'multiselect';
+  min?: number;
+  max?: number;
   maxLength?: number;
   /** left-to-right input (numbers, URLs, codes) */
   ltr?: boolean;
@@ -196,6 +198,16 @@ export function FieldControl({
   uploadImage?: UploadImage;
 }) {
   switch (field.type) {
+    case 'int':
+    case 'decimal':
+    case 'date':
+      return <Input id={id} ltr type={field.type === 'date' ? 'date' : 'number'} step={field.type === 'decimal' ? 'any' : undefined}
+        min={field.min} max={field.max} value={value} onChange={e => onChange(e.target.value)} />;
+    case 'multiselect':
+      return <Select id={id} multiple value={value ? value.split('\n') : []}
+        onChange={e => onChange(Array.from(e.target.selectedOptions, o => o.value).join('\n'))}>
+        {field.options?.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+      </Select>;
     case 'text':
       return <Input id={id} ltr={field.ltr} maxLength={field.maxLength} value={value} onChange={(e) => onChange(e.target.value)} />;
     case 'textarea':

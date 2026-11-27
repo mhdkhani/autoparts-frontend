@@ -2,7 +2,7 @@
 
 import { useState, type FormEvent } from 'react';
 import { adminUpload, useAdminForm } from '@admin/lib/client-api';
-import { categoryTree, type Category, type EavField, type EavForm, type EavValues } from '@admin/lib/types';
+import { categoryTree, type Category, type EavForm } from '@admin/lib/types';
 import {
   Button,
   Field,
@@ -14,54 +14,13 @@ import {
   Select,
   Spacer,
   useFieldTabs,
-  type FieldSpec,
-  type FieldTab,
   type UploadImage,
 } from '../ui';
+import { tabsOf, formValue } from './eav-form';
 import css from './catalog.module.css';
 
 const LIST = '/admin/catalog/categories';
 const uploadImage: UploadImage = (file) => adminUpload('/catalog/categories/upload', file);
-
-/**
- * The input for a category attribute, from its type. Values with a format pattern are English keys (url_key), so
- * they are typed left-to-right; an optional select gets an empty first choice.
- */
-function fieldOf(f: EavField): FieldSpec {
-  switch (f.dataType) {
-    case 'textarea':
-      if (f.isWysiwyg) return { type: 'editor' };
-      return { type: 'textarea', maxLength: f.validation.maxLength };
-    case 'text':
-    case 'image':
-      return { type: f.dataType, maxLength: f.validation.maxLength, ltr: Boolean(f.validation.pattern) };
-    case 'boolean':
-      return { type: 'boolean' };
-    case 'select':
-      return {
-        type: 'select',
-        options: f.options.map((o) => ({ value: o.code, label: o.labelFa })),
-        placeholder: f.isRequired ? undefined : '— انتخاب نشده —',
-      };
-    default:
-      throw new Error(`Category attribute "${f.code}" has type "${f.dataType}", which the category form doesn't support`);
-  }
-}
-
-/** The attribute set as form tabs: each group a tab, each attribute a field keyed by its code. */
-const tabsOf = (eav: EavForm): FieldTab[] =>
-  eav.groups.map((g) => ({
-    key: String(g.id),
-    label: g.name,
-    fields: g.fields.map((f) => ({ key: f.code, label: f.labelFa, field: fieldOf(f), required: f.isRequired, hint: f.helpText ?? undefined })),
-  }));
-
-/** A value as the form edits it (a string): booleans '1' / '0', a select its option code, no value ''. */
-function formValue(f: EavField, v: EavValues[string] | undefined): string {
-  if (v === null || v === undefined) return '';
-  if (f.dataType === 'boolean') return v ? '1' : '0';
-  return String(v);
-}
 
 /**
  * «افزودن / ویرایش دسته»: parent and order in the tree, then the category attribute set as tabs («عمومی»، «محتوا»،

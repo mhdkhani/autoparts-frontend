@@ -1,3 +1,4 @@
+import type { Vehicle, Fitment, Standard } from './vehicles';
 // Shapes returned by the backend admin API (backend: src/modules/users/admin).
 
 export type AdminUser = {
@@ -116,7 +117,7 @@ export type AttributeSet = {
 // ---------- catalog › categories (backend: src/modules/catalog/categories) ----------
 
 /** EAV values of an entity by attribute code; null = no value. */
-export type EavValues = Record<string, string | number | boolean | null>;
+export type EavValues = Record<string, string | string[] | number | boolean | null>;
 
 /** A category: its place in the tree + its attribute values (name, url_key, is_active, …). */
 export type Category = { id: number; parentId: number | null; position: number; values: EavValues };
@@ -172,3 +173,33 @@ export type Brand = {
 };
 /** A row of GET /admin/catalog/brands. */
 export type BrandListItem = Pick<Brand, 'id' | 'nameFa' | 'nameEn' | 'aliases' | 'urlKey' | 'originCountryCode' | 'logo'>;
+
+export type ProductChoices = {
+  vehicles: Vehicle[];
+  makes: { name: string }[];
+  sets: { id: number; name: string }[];
+  brands: { id: number; name: string }[];
+  countries: { code: string; name: string }[];
+  categories: Category[];
+};
+export type SimpleProduct = {
+  fluidClaims: Standard[];
+  fitments: Fitment[];
+  partNumbers: ProductNumbers;
+  id: number; sku: string; setId: number; brandId: number; categoryIds: number[];
+  countryCode: string | null; values: EavValues;
+};
+
+export type ProductFormDefinition = EavForm & { countryRequired: boolean };
+
+export type PartNumber = {
+  id?: number; originalId?: number; originalRaw?: string;
+  numberType: 'mpn' | 'oem'; raw: string; productBrandId?: number | null; make?: string | null;
+};
+export type NumberEvidence = { status: 'pending' | 'verified'; source?: string | null };
+export type NumberLink = NumberEvidence & { number: PartNumber };
+export type NumberRelation = NumberEvidence & {
+  id?: number; version?: string; anchor: number; other: PartNumber;
+  kind: 'equivalent' | 'supersession'; incoming: boolean;
+};
+export type ProductNumbers = { links: NumberLink[]; relations: NumberRelation[] };

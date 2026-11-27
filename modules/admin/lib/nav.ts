@@ -34,6 +34,8 @@ export const NAV = [
           { href: '/admin/catalog/attributes', label: 'ویژگی‌ها', acl: 'catalog.attributes' },
           { href: '/admin/catalog/attribute-sets', label: 'مجموعه‌ی ویژگی‌ها', acl: 'catalog.attribute_sets' },
           { href: '/admin/catalog/brands', label: 'برندهای قطعه', acl: 'catalog.brands' },
+          { href: '/admin/catalog/products', label: 'محصولات', acl: 'catalog.products' },
+          { href: '/admin/catalog/vehicles', label: 'بانک خودرو', acl: 'catalog.vehicles' },
         ],
       },
     ],
